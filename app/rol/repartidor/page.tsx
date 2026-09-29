@@ -4,13 +4,28 @@
 import { useState } from "react";
 
 
-import RouteMap from "@/components/map/RouteMap";
+
 import RouteResult from "@/components/route/RouteResult";
 import RouteForm from "@/components/route/RouteForm";
 import Navbar from "@/components/layout/Navbar";
-
 import { calculateRoute } from "@/services/routeService";
 
+
+import dynamic from "next/dynamic";
+
+const RouteMap = dynamic(
+  () => import("@/components/map/RouteMap"),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="flex h-full min-h-[620px] items-center justify-center rounded-xl bg-gray-100">
+        <p className="text-gray-500">
+          Cargando mapa...
+        </p>
+      </div>
+    ),
+  }
+);
 import type {
   RouteRequest,
   RouteResult as RouteResultType,
@@ -122,86 +137,7 @@ export default function RepartidorPage() {
             </section>
 
 
-            {/* =================================================
-                PEDIDO ACTUAL
-            ================================================== */}
-            <section className="overflow-hidden rounded-2xl border border-orange-100 bg-white shadow-[0_4px_20px_rgba(255,102,0,0.07)]">
-
-              <div className="border-b border-slate-100 px-4 py-3">
-
-                <div className="flex items-center justify-between">
-
-                  <div>
-                    <p className="text-[9px] font-bold uppercase tracking-wider text-[#FF6600]">
-                      Pedido actual
-                    </p>
-
-                    <h2 className="text-base font-black text-slate-950">
-                      Entrega #RP-1024
-                    </h2>
-                  </div>
-
-                  <span className="rounded-full bg-[#FFCC00] px-2 py-1 text-[8px] font-black text-orange-950">
-                    EN CURSO
-                  </span>
-
-                </div>
-
-              </div>
-
-              <div className="space-y-3 p-4">
-
-                {/* ORIGEN */}
-                <div className="flex gap-3">
-
-                  <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-orange-100 text-xs">
-                    🏪
-                  </div>
-
-                  <div>
-                    <p className="text-[8px] font-bold uppercase text-slate-400">
-                      Recoger en
-                    </p>
-
-                    <p className="text-xs font-bold text-slate-900">
-                      Restaurante / Tienda
-                    </p>
-
-                    <p className="text-[10px] text-slate-500">
-                      Av. principal 123
-                    </p>
-                  </div>
-
-                </div>
-
-                {/* LÍNEA */}
-                <div className="ml-3.5 h-4 border-l-2 border-dashed border-orange-200" />
-
-                {/* DESTINO */}
-                <div className="flex gap-3">
-
-                  <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#FFCC00] text-xs">
-                    📍
-                  </div>
-
-                  <div>
-                    <p className="text-[8px] font-bold uppercase text-slate-400">
-                      Entregar en
-                    </p>
-
-                    <p className="text-xs font-bold text-slate-900">
-                      Dirección del cliente
-                    </p>
-
-                    <p className="text-[10px] text-slate-500">
-                      Av. Larco 456, Miraflores
-                    </p>
-                  </div>
-
-                </div>
-
-              </div>
-            </section>
+            
 
 
             {/* =================================================
@@ -380,7 +316,7 @@ export default function RepartidorPage() {
                   </p>
 
                   <p className="mt-0.5 text-[11px] font-black text-[#FF6600]">
-                    {result?.algorithm ?? "Dijkstra"}
+                    {result?.algorithm ?? "Esperando"}
                   </p>
 
                 </div>
@@ -426,7 +362,9 @@ export default function RepartidorPage() {
                 MAPA
             ================================================== */}
             <div className="h-full w-full">
-              <RouteMap />
+              <RouteMap
+                route={result?.route ?? []}
+              />
             </div>
 
 

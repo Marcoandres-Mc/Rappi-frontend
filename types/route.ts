@@ -1,25 +1,32 @@
-export type OptimizationCriterion = 
-  | "distance"
-  | "time"
-  | "traffic";
-
 export type Algorithm =
-  | "dijkstra"
-  | "brute-force"
+  | "brute_force"
   | "backtracking"
-  | "divide-conquer";
+  | "divide_conquer";
+
+export interface Coordinate {
+  lat: number;
+  lon: number;
+}
+
+export interface Location {
+  id: string;
+  name: string;
+  address: string;
+  district: "Miraflores" | "San Isidro";
+  coordinates: Coordinate;
+}
 
 export interface RouteRequest {
-  origin: string;
-  destination: string;
-  criterion: OptimizationCriterion;
+  origin: Coordinate;
+  destination: Coordinate;
   algorithm: Algorithm;
 }
 
 export interface RouteResult {
-  distance: number;
-  estimatedTime: number;
-  nodesVisited: number;
-  routeNodes: number[];
-  algorithm: Algorithm;
+  algorithm: string;
+  distance_km: number | null;
+  estimated_time_min: number | null;
+  nodes_explored: number | null;
+  branches_pruned: number | null;
+  route: Coordinate[];
 }

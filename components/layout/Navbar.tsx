@@ -29,23 +29,12 @@ export default function Navbar() {
             Cliente
           </Link>
           <Link
-            href="/rol/provedor"
-            className="rounded-lg px-4 py-2 text-sm font-medium text-slate-900 transition hover:bg-orange-50 hover:text-[#FF6600]"
-          >
-            Provedor
-          </Link>
-          <Link
             href="/rol/repartidor"
             className="rounded-lg px-4 py-2 text-sm font-medium text-slate-900 transition hover:bg-orange-50 hover:text-[#FF6600]"
           >
             Repartidor
           </Link>
-          <Link
-            href="/rol/administrador"
-            className="rounded-lg px-4 py-2 text-sm font-medium text-slate-900 transition hover:bg-orange-50 hover:text-[#FF6600]"
-          >
-            Administrador
-          </Link>
+
           
           
 
