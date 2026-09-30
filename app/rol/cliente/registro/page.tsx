@@ -1,20 +1,40 @@
-
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
+import { useRouter } from "next/navigation";
 import Navbar from "@/components/layout/Navbar";
 
 export default function RegistroPage() {
+  const router = useRouter();
+
   const [name, setName] = useState("");
   const [address, setAddress] = useState("");
+
+  const continuar = () => {
+    if (!name.trim() || !address.trim()) {
+      alert("Completa tu nombre y dirección.");
+      return;
+    }
+
+    const usuario = {
+      id: Date.now(),
+      nombre: name.trim(),
+      ubicacion_actual: address.trim(),
+    };
+
+    sessionStorage.setItem(
+      "usuario",
+      JSON.stringify(usuario)
+    );
+
+    router.push("/rol/cliente/productos");
+  };
 
   return (
     <div className="min-h-screen bg-[#fffaf5]">
       <Navbar />
 
       <main className="mx-auto max-w-xl px-6 py-10">
-
         <div className="rounded-3xl border border-orange-100 bg-white p-6 shadow-sm">
 
           <div className="mb-6">
@@ -61,17 +81,16 @@ export default function RegistroPage() {
 
           </div>
 
-          <Link
-            href="/rol/cliente/productos"
-            className="mt-6 block rounded-xl bg-[#FF6600] px-4 py-3 text-center text-sm font-black text-white transition hover:bg-[#e95700]"
+          <button
+            type="button"
+            onClick={continuar}
+            className="mt-6 block w-full rounded-xl bg-[#FF6600] px-4 py-3 text-center text-sm font-black text-white transition hover:bg-[#e95700]"
           >
             Continuar →
-          </Link>
+          </button>
 
         </div>
-
       </main>
     </div>
   );
 }
-

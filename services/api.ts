@@ -1,9 +1,5 @@
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
-if (!API_URL) {
-  console.warn("NEXT_PUBLIC_API_URL no está configurada.");
-}
-
 export async function apiFetch(
   endpoint: string,
   options?: RequestInit
