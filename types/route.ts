@@ -1,32 +1,59 @@
 export type Algorithm =
-  | "brute_force"
+  | "fuerzaBruta"
   | "backtracking"
-  | "divide_conquer";
-
-export interface Coordinate {
-  lat: number;
-  lon: number;
-}
+  | "divideVencenas";
 
 export interface Location {
   id: string;
   name: string;
   address: string;
+
+  // Distritos permitidos para el proyecto
   district: "Miraflores" | "San Isidro";
-  coordinates: Coordinate;
+
+  // ID del nodo correspondiente en el grafo
+  nodeId: string | number;
+
+  coordinates: {
+    lat: number;
+    lon: number;
+  };
 }
 
 export interface RouteRequest {
-  origin: Coordinate;
-  destination: Coordinate;
-  algorithm: Algorithm;
+  ubicacion_inicial: string;
+  algoritmo: Algorithm;
+  destinos: number[];
+}
+
+export interface RoutePoint {
+  id: string | number;
+  lat: number;
+  lon: number;
+  distrito: string | null;
 }
 
 export interface RouteResult {
-  algorithm: string;
-  distance_km: number | null;
-  estimated_time_min: number | null;
-  nodes_explored: number | null;
-  branches_pruned: number | null;
-  route: Coordinate[];
+  mensaje: string;
+
+  algoritmo: Algorithm;
+
+  criterio: string;
+
+  origen: RoutePoint;
+
+  destinos: Array<string | number>;
+
+  ruta: Array<string | number>;
+
+  puntos_mapa: RoutePoint[];
+
+  costo_total: number | null;
+
+  estadisticas_grafo: {
+    nodos: number;
+    edges: number;
+    dirigido: boolean;
+    multigrafo: boolean;
+  };
 }

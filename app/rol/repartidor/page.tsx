@@ -1,22 +1,28 @@
-
 "use client";
 
 import { useState } from "react";
-
-
+import dynamic from "next/dynamic";
 
 import RouteResult from "@/components/route/RouteResult";
 import RouteForm from "@/components/route/RouteForm";
 import Navbar from "@/components/layout/Navbar";
-import { calculateRoute } from "@/services/routeService";
+
+import {
+  calculateRoute,
+  type RouteRequest,
+  type RouteResult as RouteResultType,
+} from "@/services/routeService";
 
 
-import dynamic from "next/dynamic";
+// =========================================================
+// MAPA
+// =========================================================
 
 const RouteMap = dynamic(
   () => import("@/components/map/RouteMap"),
   {
     ssr: false,
+
     loading: () => (
       <div className="flex h-full min-h-[620px] items-center justify-center rounded-xl bg-gray-100">
         <p className="text-gray-500">
@@ -26,41 +32,78 @@ const RouteMap = dynamic(
     ),
   }
 );
-import type {
-  RouteRequest,
-  RouteResult as RouteResultType,
-} from "@/types/route";
+
+
+// =========================================================
+// PÁGINA
+// =========================================================
 
 export default function RepartidorPage() {
-  const [result, setResult] = useState<RouteResultType | null>(null);
-  const [loading, setLoading] = useState(false);
 
-  const handleCalculate = async (request: RouteRequest) => {
+  const [result, setResult] =
+    useState<RouteResultType | null>(null);
+
+  const [loading, setLoading] =
+    useState(false);
+
+
+  // =======================================================
+  // CALCULAR RUTA
+  // =======================================================
+
+  const handleCalculate = async (
+    request: RouteRequest
+  ) => {
+
     setLoading(true);
 
     try {
+
       const data = await calculateRoute(request);
+
       setResult(data);
+
+    } catch (error) {
+
+      console.error(
+        "Error calculando la ruta:",
+        error
+      );
+
     } finally {
+
       setLoading(false);
+
     }
   };
 
+
+  // =======================================================
+  // RENDER
+  // =======================================================
+
   return (
+
     <div className="min-h-screen w-full bg-[#fffaf5]">
+
       <Navbar />
 
       <main className="p-3 lg:p-4">
+
         <div className="grid grid-cols-1 gap-3 lg:grid-cols-12">
 
-          {/* =====================================================
+
+          {/* =================================================
               PANEL DEL REPARTIDOR
-          ====================================================== */}
+          ================================================== */}
+
           <aside className="flex min-h-0 flex-col gap-3 lg:col-span-4 xl:col-span-3">
 
+
             {/* =================================================
-                PERFIL / ESTADO DEL REPARTIDOR
+                PERFIL
             ================================================== */}
+
             <section className="overflow-hidden rounded-2xl border border-orange-100 bg-white shadow-[0_4px_20px_rgba(255,102,0,0.07)]">
 
               <div className="h-1 bg-[#FF6600]" />
@@ -76,6 +119,7 @@ export default function RepartidorPage() {
                     </div>
 
                     <div>
+
                       <p className="text-[9px] font-bold uppercase tracking-wider text-slate-400">
                         Repartidor
                       </p>
@@ -83,66 +127,84 @@ export default function RepartidorPage() {
                       <h2 className="text-sm font-black text-slate-950">
                         Panel de entrega
                       </h2>
+
                     </div>
 
                   </div>
 
-                  {/* ESTADO */}
+
                   <div className="flex items-center gap-1.5 rounded-full bg-emerald-50 px-2 py-1">
+
                     <span className="h-2 w-2 rounded-full bg-emerald-500" />
 
                     <span className="text-[9px] font-black text-emerald-700">
                       Disponible
                     </span>
+
                   </div>
 
                 </div>
 
+
                 {/* ESTADÍSTICAS */}
+
                 <div className="mt-4 grid grid-cols-3 gap-2">
 
                   <div className="rounded-xl bg-slate-50 p-2 text-center">
+
                     <p className="text-lg font-black text-slate-900">
-                      3
+                      {result?.destinos?.length ?? 0}
                     </p>
 
                     <p className="text-[8px] font-bold uppercase text-slate-400">
-                      Pedidos
+                      Destinos
                     </p>
+
                   </div>
 
+
                   <div className="rounded-xl bg-slate-50 p-2 text-center">
+
                     <p className="text-lg font-black text-[#FF6600]">
-                      12.4
+
+                      {result?.costo_total != null
+                        ? `${(
+                            result.costo_total / 1000
+                          ).toFixed(2)}`
+                        : "—"}
+
                     </p>
 
                     <p className="text-[8px] font-bold uppercase text-slate-400">
                       Km
                     </p>
+
                   </div>
 
+
                   <div className="rounded-xl bg-slate-50 p-2 text-center">
+
                     <p className="text-lg font-black text-slate-900">
-                      38
+                      —
                     </p>
 
                     <p className="text-[8px] font-bold uppercase text-slate-400">
                       Min
                     </p>
+
                   </div>
 
                 </div>
 
               </div>
+
             </section>
 
 
-            
-
-
             {/* =================================================
-                PLANIFICAR / CALCULAR RUTA
+                OPTIMIZAR RECORRIDO
             ================================================== */}
+
             <section className="overflow-hidden rounded-2xl border border-orange-100 bg-white shadow-[0_4px_20px_rgba(255,102,0,0.07)]">
 
               <div className="border-b border-slate-100 px-4 py-3">
@@ -167,24 +229,29 @@ export default function RepartidorPage() {
                   </div>
 
                   <div>
+
                     <h2 className="text-sm font-black text-slate-950">
                       Optimizar recorrido
                     </h2>
 
                     <p className="text-[9px] text-slate-500">
-                      Calcula la mejor ruta para tu entrega
+                      Calcula la ruta de tus entregas
                     </p>
+
                   </div>
 
                 </div>
 
               </div>
 
+
               <div className="p-4">
+
                 <RouteForm
                   onCalculate={handleCalculate}
                   loading={loading}
                 />
+
               </div>
 
             </section>
@@ -193,6 +260,7 @@ export default function RepartidorPage() {
             {/* =================================================
                 RESULTADO
             ================================================== */}
+
             <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
 
               <div className="border-b border-slate-100 px-4 py-3">
@@ -200,38 +268,26 @@ export default function RepartidorPage() {
                 <div className="flex items-center justify-between">
 
                   <div>
+
                     <div className="flex items-center gap-2">
 
                       <h2 className="text-sm font-black text-slate-950">
-                        Ruta óptima
+                        Ruta calculada
                       </h2>
 
                       {result && (
+
                         <span className="rounded-full bg-[#FFCC00] px-2 py-0.5 text-[7px] font-black text-orange-950">
                           CALCULADA
                         </span>
+
                       )}
 
                     </div>
 
                     <p className="mt-0.5 text-[10px] text-slate-500">
-                      Información de tu recorrido
+                      Información del recorrido
                     </p>
-                  </div>
-
-                  <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-orange-50">
-
-                    <svg
-                      width="14"
-                      height="14"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="#FF6600"
-                      strokeWidth="2"
-                    >
-                      <path d="M3 3v18h18" />
-                      <path d="m7 16 4-5 3 3 5-7" />
-                    </svg>
 
                   </div>
 
@@ -239,37 +295,51 @@ export default function RepartidorPage() {
 
               </div>
 
+
               <div className="p-4">
-                <RouteResult result={result} />
+
+                <RouteResult
+                  result={result}
+                />
+
               </div>
 
             </section>
 
 
             {/* =================================================
-                BOTÓN DE ENTREGA
+                INICIAR ENTREGA
             ================================================== */}
+
             <button
               type="button"
-              className="w-full rounded-xl bg-[#FF6600] px-4 py-3 text-sm font-black text-white shadow-[0_4px_12px_rgba(255,102,0,0.25)] transition hover:bg-[#e95700] active:scale-[0.98]"
+              disabled={!result || loading}
+              className="w-full rounded-xl bg-[#FF6600] px-4 py-3 text-sm font-black text-white shadow-[0_4px_12px_rgba(255,102,0,0.25)] transition hover:bg-[#e95700] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
             >
+
               🛵 Iniciar entrega
+
             </button>
 
           </aside>
 
 
-          {/* =====================================================
+          {/* =================================================
               MAPA
-          ====================================================== */}
-          <section className="relative min-h-[620px] overflow-hidden rounded-2xl border border-orange-100 bg-white shadow-[0_5px_25px_rgba(255,102,0,0.08)] lg:col-span-8 xl:col-span-9">
+          ================================================== */}
+
+          <section className="relative lg:col-span-8 xl:col-span-9 min-h-[620px] overflow-hidden rounded-2xl border border-orange-100 bg-white shadow-[0_5px_25px_rgba(255,102,0,0.08)]">
+
 
             {/* =================================================
-                INFORMACIÓN SUPERIOR DEL MAPA
+                INFORMACIÓN SUPERIOR
             ================================================== */}
+
             <div className="absolute left-3 right-3 top-3 z-[1000] flex items-start justify-between">
 
+
               {/* RED VIAL */}
+
               <div className="rounded-xl border border-orange-100 bg-white/95 px-3 py-2 shadow-lg backdrop-blur">
 
                 <div className="flex items-center gap-2.5">
@@ -292,13 +362,15 @@ export default function RepartidorPage() {
                   </div>
 
                   <div>
+
                     <p className="text-[10px] font-black uppercase tracking-wider text-slate-900">
                       Ruta de entrega
                     </p>
 
                     <p className="text-[9px] text-slate-500">
-                      Red urbana · OpenStreetMap
+                      Miraflores · San Isidro · OpenStreetMap
                     </p>
+
                   </div>
 
                 </div>
@@ -307,6 +379,7 @@ export default function RepartidorPage() {
 
 
               {/* INFORMACIÓN DEL ALGORITMO */}
+
               <div className="hidden overflow-hidden rounded-xl border border-orange-100 bg-white/95 shadow-lg backdrop-blur sm:flex">
 
                 <div className="px-3 py-2">
@@ -316,12 +389,14 @@ export default function RepartidorPage() {
                   </p>
 
                   <p className="mt-0.5 text-[11px] font-black text-[#FF6600]">
-                    {result?.algorithm ?? "Esperando"}
+                    {result?.algoritmo ?? "Esperando"}
                   </p>
 
                 </div>
 
+
                 <div className="w-px bg-orange-100" />
+
 
                 <div className="px-3 py-2">
 
@@ -342,11 +417,13 @@ export default function RepartidorPage() {
                     />
 
                     <p className="text-[11px] font-black text-slate-900">
+
                       {loading
                         ? "Calculando"
                         : result
                           ? "Ruta lista"
                           : "Esperando"}
+
                     </p>
 
                   </div>
@@ -361,33 +438,44 @@ export default function RepartidorPage() {
             {/* =================================================
                 MAPA
             ================================================== */}
+
             <div className="h-full w-full">
+
               <RouteMap
-                route={result?.route ?? []}
+                points={result?.puntos_mapa ?? []}
+
+                districts={[
+                  "Miraflores",
+                  "San Isidro",
+                ]}
               />
+
             </div>
 
 
             {/* =================================================
                 LEYENDA
             ================================================== */}
+
             <div className="absolute bottom-3 left-3 z-[1000]">
 
               <div className="rounded-xl border border-orange-100 bg-white/95 px-3 py-2 shadow-lg backdrop-blur">
 
-                <div className="flex items-center gap-3">
+                <div className="flex flex-wrap items-center gap-3">
 
                   <div className="flex items-center gap-1.5">
 
                     <span className="h-2 w-5 rounded-full bg-[#FF6600]" />
 
                     <span className="text-[9px] font-bold text-slate-700">
-                      Ruta óptima
+                      Ruta
                     </span>
 
                   </div>
 
+
                   <div className="h-3 w-px bg-slate-200" />
+
 
                   <div className="flex items-center gap-1.5">
 
@@ -399,6 +487,14 @@ export default function RepartidorPage() {
 
                   </div>
 
+
+                  <div className="h-3 w-px bg-slate-200" />
+
+
+                  <span className="text-[9px] font-bold text-slate-500">
+                    Miraflores · San Isidro
+                  </span>
+
                 </div>
 
               </div>
@@ -407,8 +503,9 @@ export default function RepartidorPage() {
 
 
             {/* =================================================
-                ESTADO DE LA ENTREGA
+                ESTADO
             ================================================== */}
+
             <div className="absolute bottom-3 right-3 z-[1000]">
 
               <div className="rounded-xl bg-[#FF6600] px-3 py-2 shadow-lg">
@@ -426,7 +523,11 @@ export default function RepartidorPage() {
                     </p>
 
                     <p className="text-[10px] font-black text-white">
-                      {result ? "Ruta optimizada" : "Esperando ruta"}
+
+                      {result
+                        ? "Ruta optimizada"
+                        : "Esperando ruta"}
+
                     </p>
 
                   </div>
@@ -440,8 +541,9 @@ export default function RepartidorPage() {
           </section>
 
         </div>
+
       </main>
+
     </div>
   );
 }
-

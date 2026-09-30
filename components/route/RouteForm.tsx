@@ -13,12 +13,23 @@ interface RouteFormProps {
   loading: boolean;
 }
 
+/*
+ * IMPORTANTE:
+ * Los nodeId deben corresponder a nodos REALES
+ * del archivo:
+ *
+ * app/data/graph/miraflores_san_isidro.json
+ *
+ * Estos valores son ejemplos.
+ * Reemplázalos por los IDs reales de tu JSON.
+ */
 const locations: Location[] = [
   {
     id: "local-1",
     name: "Local Miraflores Centro",
     address: "Av. Larco",
     district: "Miraflores",
+    nodeId: 1,
     coordinates: {
       lat: -12.1219,
       lon: -77.0297,
@@ -29,6 +40,7 @@ const locations: Location[] = [
     name: "Local San Isidro",
     address: "Av. Javier Prado",
     district: "San Isidro",
+    nodeId: 2,
     coordinates: {
       lat: -12.0925,
       lon: -77.0365,
@@ -39,6 +51,7 @@ const locations: Location[] = [
     name: "Local Miraflores Sur",
     address: "Av. Reducto",
     district: "Miraflores",
+    nodeId: 3,
     coordinates: {
       lat: -12.1328,
       lon: -77.0225,
@@ -52,10 +65,10 @@ const algorithms: {
   description: string;
 }[] = [
   {
-    value: "brute_force",
+    value: "fuerzaBruta",
     label: "Fuerza Bruta",
     description:
-      "Evalúa todas las posibilidades de recorrido.",
+      "Evalúa las diferentes posibilidades de recorrido para encontrar una solución.",
   },
   {
     value: "backtracking",
@@ -64,10 +77,10 @@ const algorithms: {
       "Descarta recorridos que ya no pueden mejorar la solución.",
   },
   {
-    value: "divide_conquer",
+    value: "divideVencenas",
     label: "Divide y Vencerás",
     description:
-      "Divide el problema en zonas más pequeñas.",
+      "Divide el problema en partes más pequeñas y combina sus resultados.",
   },
 ];
 
@@ -76,7 +89,9 @@ export default function RouteForm({
   loading,
 }: RouteFormProps) {
   const [originId, setOriginId] = useState("local-1");
-  const [destinationId, setDestinationId] = useState("local-2");
+  const [destinationId, setDestinationId] =
+    useState("local-2");
+
   const [algorithm, setAlgorithm] =
     useState<Algorithm>("backtracking");
 
@@ -88,7 +103,9 @@ export default function RouteForm({
     (location) => location.id === destinationId
   );
 
-  const handleSubmit = (event: React.FormEvent) => {
+  const handleSubmit = (
+    event: React.FormEvent<HTMLFormElement>
+  ) => {
     event.preventDefault();
 
     if (!origin || !destination) {
@@ -102,10 +119,26 @@ export default function RouteForm({
       return;
     }
 
+    /*
+     * El origen se envía como coordenadas.
+     *
+     * El backend buscará el nodo del grafo
+     * más cercano a esta ubicación.
+     */
+    const ubicacionInicial =
+      `${origin.coordinates.lat},${origin.coordinates.lon}`;
+
+    /*
+     * El destino debe ser un ID REAL del grafo.
+     *
+     * No enviamos "local-2".
+     * Enviamos el nodeId correspondiente
+     * al grafo generado desde OpenStreetMap.
+     */
     const request: RouteRequest = {
-      origin: origin.coordinates,
-      destination: destination.coordinates,
-      algorithm,
+      ubicacion_inicial: ubicacionInicial,
+      algoritmo: algorithm,
+      destinos: [Number(destination.nodeId)],
     };
 
     onCalculate(request);
@@ -120,6 +153,22 @@ export default function RouteForm({
       onSubmit={handleSubmit}
       className="space-y-4"
     >
+      {/* ZONA DEL PROYECTO */}
+      <div className="rounded-xl border border-orange-100 bg-orange-50 p-3">
+        <p className="text-[8px] font-black uppercase tracking-wider text-[#FF6600]">
+          Zona de operación
+        </p>
+
+        <p className="mt-1 text-xs font-bold text-slate-800">
+          Miraflores · San Isidro
+        </p>
+
+        <p className="mt-1 text-[9px] leading-relaxed text-slate-500">
+          La optimización utiliza únicamente la red vial
+          correspondiente a estos distritos.
+        </p>
+      </div>
+
       {/* ORIGEN */}
       <div>
         <label className="mb-1.5 block text-[9px] font-black uppercase tracking-wider text-slate-400">
@@ -131,7 +180,8 @@ export default function RouteForm({
           onChange={(event) =>
             setOriginId(event.target.value)
           }
-          className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-xs font-bold text-slate-900 outline-none transition focus:border-[#FF6600]"
+          disabled={loading}
+          className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-xs font-bold text-slate-900 outline-none transition focus:border-[#FF6600] disabled:cursor-not-allowed disabled:bg-slate-50"
         >
           {locations.map((location) => (
             <option
@@ -144,9 +194,15 @@ export default function RouteForm({
         </select>
 
         {origin && (
-          <p className="mt-1 text-[9px] text-slate-400">
-            {origin.address}
-          </p>
+          <div className="mt-1">
+            <p className="text-[9px] text-slate-400">
+              {origin.address}
+            </p>
+
+            <p className="text-[9px] font-semibold text-orange-500">
+              Distrito: {origin.district}
+            </p>
+          </div>
         )}
       </div>
 
@@ -161,7 +217,8 @@ export default function RouteForm({
           onChange={(event) =>
             setDestinationId(event.target.value)
           }
-          className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-xs font-bold text-slate-900 outline-none transition focus:border-[#FF6600]"
+          disabled={loading}
+          className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-xs font-bold text-slate-900 outline-none transition focus:border-[#FF6600] disabled:cursor-not-allowed disabled:bg-slate-50"
         >
           {locations.map((location) => (
             <option
@@ -174,9 +231,15 @@ export default function RouteForm({
         </select>
 
         {destination && (
-          <p className="mt-1 text-[9px] text-slate-400">
-            {destination.address}
-          </p>
+          <div className="mt-1">
+            <p className="text-[9px] text-slate-400">
+              {destination.address}
+            </p>
+
+            <p className="text-[9px] font-semibold text-orange-500">
+              Distrito: {destination.district}
+            </p>
+          </div>
         )}
       </div>
 
@@ -193,7 +256,8 @@ export default function RouteForm({
               event.target.value as Algorithm
             )
           }
-          className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-xs font-bold text-slate-900 outline-none transition focus:border-[#FF6600]"
+          disabled={loading}
+          className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-xs font-bold text-slate-900 outline-none transition focus:border-[#FF6600] disabled:cursor-not-allowed disabled:bg-slate-50"
         >
           {algorithms.map((item) => (
             <option
@@ -218,21 +282,38 @@ export default function RouteForm({
           Recorrido
         </p>
 
-        <p className="mt-1 text-xs font-black text-slate-900">
-          {origin?.name}
-        </p>
+        <div className="mt-2">
+          <p className="text-xs font-black text-slate-900">
+            {origin?.name}
+          </p>
 
-        <div className="my-1 ml-1 h-3 border-l border-dashed border-orange-300" />
+          <p className="text-[9px] text-slate-400">
+            {origin?.district}
+          </p>
+        </div>
 
-        <p className="text-xs font-black text-slate-900">
-          {destination?.name}
-        </p>
+        <div className="my-2 ml-1 h-4 border-l border-dashed border-orange-300" />
+
+        <div>
+          <p className="text-xs font-black text-slate-900">
+            {destination?.name}
+          </p>
+
+          <p className="text-[9px] text-slate-400">
+            {destination?.district}
+          </p>
+        </div>
       </div>
 
       {/* BOTÓN */}
       <button
         type="submit"
-        disabled={loading}
+        disabled={
+          loading ||
+          !origin ||
+          !destination ||
+          origin.id === destination.id
+        }
         className="w-full rounded-xl bg-[#FF6600] px-4 py-3 text-xs font-black text-white shadow-[0_4px_12px_rgba(255,102,0,0.25)] transition hover:bg-[#e95700] disabled:cursor-not-allowed disabled:opacity-60"
       >
         {loading

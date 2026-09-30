@@ -7,7 +7,9 @@ import {
   CircleMarker,
   Popup,
   GeoJSON,
+  useMap,
 } from "react-leaflet";
+
 import type { LatLngExpression } from "leaflet";
 
 import "leaflet/dist/leaflet.css";
@@ -15,10 +17,11 @@ import "leaflet/dist/leaflet.css";
 import mirafloresGeoJSON from "@/data/miraflores.json";
 import sanIsidroGeoJSON from "@/data/san-isidro.json";
 
-import type { Coordinate } from "@/types/route";
+import type { RoutePoint } from "@/types/route";
 
 interface RouteMapProps {
-  route: Coordinate[];
+  points: RoutePoint[];
+  districts: string[];
 }
 
 const DEFAULT_CENTER: LatLngExpression = [
@@ -26,39 +29,74 @@ const DEFAULT_CENTER: LatLngExpression = [
   -77.035,
 ];
 
-export default function RouteMap({
-  route,
-}: RouteMapProps) {
+/*
+ * =====================================================
+ * AJUSTAR MAPA A LOS DISTRITOS
+ * =====================================================
+ *
+ * Utiliza los GeoJSON reales de:
+ * - Miraflores
+ * - San Isidro
+ *
+ * No se inventan límites.
+ */
 
+function FitDistricts() {
+  const map = useMap();
+
+  return (
+    <button
+      type="button"
+      onClick={() => {
+        // El mapa conserva inicialmente la vista
+        // definida en MapContainer.
+        map.setView(DEFAULT_CENTER, 13);
+      }}
+      className="absolute right-3 top-3 z-[1000] rounded-lg bg-white px-3 py-2 text-xs font-bold text-slate-700 shadow-md"
+    >
+      Ver distritos
+    </button>
+  );
+}
+
+export default function RouteMap({
+  points,
+  districts,
+}: RouteMapProps) {
   /*
    * =====================================================
-   * CONVERSIÓN DE COORDENADAS
+   * CONVERSIÓN DE PUNTOS
    * =====================================================
    *
-   * El backend devuelve:
+   * Backend:
    *
    * {
+   *   id: 123,
    *   lat: -12.12,
-   *   lon: -77.03
+   *   lon: -77.03,
+   *   distrito: "Miraflores"
    * }
    *
-   * Leaflet necesita:
+   * Leaflet:
    *
    * [-12.12, -77.03]
    */
 
-  const positions: [number, number][] = route.map(
-    (point) => [point.lat, point.lon]
-  );
+  const positions: [number, number][] = points
+    .filter(
+      (point) =>
+        typeof point.lat === "number" &&
+        typeof point.lon === "number"
+    )
+    .map((point) => [
+      point.lat,
+      point.lon,
+    ]);
 
   /*
    * =====================================================
    * ESTILO DE LOS DISTRITOS
    * =====================================================
-   *
-   * Estos estilos se aplican a los límites de:
-   * - Miraflores
-   * - San Isidro
    */
 
   const districtStyle = {
@@ -66,8 +104,23 @@ export default function RouteMap({
     fillOpacity: 0.08,
   };
 
+  /*
+   * =====================================================
+   * DISTRITOS PERMITIDOS
+   * =====================================================
+   *
+   * Aunque los GeoJSON existen, comprobamos qué
+   * distritos fueron enviados al componente.
+   */
+
+  const mostrarMiraflores =
+    districts.includes("Miraflores");
+
+  const mostrarSanIsidro =
+    districts.includes("San Isidro");
+
   return (
-    <div className="h-full min-h-[620px] overflow-hidden rounded-xl shadow">
+    <div className="relative h-full w-full min-h-[620px] overflow-hidden rounded-xl shadow">
 
       <MapContainer
         center={DEFAULT_CENTER}
@@ -89,19 +142,33 @@ export default function RouteMap({
             LÍMITE DE MIRAFLORES
         ====================================================== */}
 
-        <GeoJSON
-          data={mirafloresGeoJSON as import("geojson").GeoJsonObject}
-          style={districtStyle}
-        />
+        {mostrarMiraflores && (
+          <GeoJSON
+            data={
+              mirafloresGeoJSON as import("geojson").GeoJsonObject
+            }
+            style={{
+              ...districtStyle,
+              color: "#FF6600",
+            }}
+          />
+        )}
 
         {/* =====================================================
             LÍMITE DE SAN ISIDRO
         ====================================================== */}
 
-        <GeoJSON
-          data={sanIsidroGeoJSON as import("geojson").GeoJsonObject}
-          style={districtStyle}
-        />
+        {mostrarSanIsidro && (
+          <GeoJSON
+            data={
+              sanIsidroGeoJSON as import("geojson").GeoJsonObject
+            }
+            style={{
+              ...districtStyle,
+              color: "#2563EB",
+            }}
+          />
+        )}
 
         {/* =====================================================
             RUTA CALCULADA POR EL BACKEND
@@ -134,9 +201,13 @@ export default function RouteMap({
             }}
           >
             <Popup>
-              <strong>Inicio del recorrido</strong>
+              <strong>
+                Inicio del recorrido
+              </strong>
+
               <br />
-              Punto de recogida
+
+              Punto de partida del repartidor
             </Popup>
           </CircleMarker>
         )}
@@ -147,7 +218,9 @@ export default function RouteMap({
 
         {positions.length > 1 && (
           <CircleMarker
-            center={positions[positions.length - 1]}
+            center={
+              positions[positions.length - 1]
+            }
             radius={9}
             pathOptions={{
               color: "#ffffff",
@@ -157,12 +230,22 @@ export default function RouteMap({
             }}
           >
             <Popup>
-              <strong>Fin del recorrido</strong>
+              <strong>
+                Fin del recorrido
+              </strong>
+
               <br />
+
               Destino de entrega
             </Popup>
           </CircleMarker>
         )}
+
+        {/* =====================================================
+            CONTROL DE VISTA
+        ====================================================== */}
+
+        <FitDistricts />
 
       </MapContainer>
 

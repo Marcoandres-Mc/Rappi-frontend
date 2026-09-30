@@ -70,7 +70,7 @@ export default function CarritoPage() {
         JSON.parse(usuarioGuardado);
 
       // 2. Construir todo el pedido
-      const pedido = {
+      const usuarioData = {
         usuario: {
           id: usuario.id,
           nombre: usuario.nombre,
@@ -85,12 +85,12 @@ export default function CarritoPage() {
         },
       };
 
-      console.log("Pedido enviado al backend:", pedido);
+      console.log("Usuario enviado al backend:", usuarioData);
 
       // 3. Enviar TODO al backend
-      const respuesta = await apiFetch("/routes/pedido", {
+      const respuesta = await apiFetch("/routes/usuario", {
         method: "POST",
-        body: JSON.stringify(pedido),
+        body: JSON.stringify(usuarioData),
       });
 
       console.log("Respuesta del backend:", respuesta);
@@ -98,17 +98,17 @@ export default function CarritoPage() {
       // 4. Guardar también localmente por si RepartidorPage lo necesita
       sessionStorage.setItem(
         "resumenPedido",
-        JSON.stringify(pedido)
+        JSON.stringify(usuarioData)
       );
 
       // 5. Ir al siguiente paso
       router.push("/rol/repartidor");
 
     } catch (error) {
-      console.error("Error al enviar el pedido:", error);
+      console.error("Error al enviar el usuario:", error);
 
       alert(
-        "No se pudo enviar el pedido al servidor."
+        "No se pudo enviar el usuario al servidor."
       );
     } finally {
       setEnviando(false);
