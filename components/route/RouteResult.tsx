@@ -1,264 +1,161 @@
 import type {
-  RouteResult as RouteResultType,
+  DeliveryRouteResponse,
+  RouteResponse,
 } from "@/types/route";
 
 interface RouteResultProps {
-  result: RouteResultType | null;
+  result: RouteResponse | DeliveryRouteResponse | null;
+  mode: "direct" | "deliveries";
+}
+
+function formatDistance(meters: number): string {
+  return `${(meters / 1000).toFixed(2)} km`;
+}
+
+function formatNumber(value: number): string {
+  return new Intl.NumberFormat("es-PE", {
+    maximumFractionDigits: 2,
+  }).format(value);
 }
 
 export default function RouteResult({
   result,
+  mode,
 }: RouteResultProps) {
   if (!result) {
     return (
-      <div className="rounded-xl bg-white p-5 shadow">
-        <h2 className="text-lg font-bold text-gray-800">
-          Resultado de la ruta
-        </h2>
-
+      <section className="rounded-2xl border border-gray-200 bg-white p-5">
+        <h2 className="font-bold text-gray-900">Resultado del recorrido</h2>
         <p className="mt-2 text-sm text-gray-500">
-          Calcula una ruta para visualizar los resultados.
+          Calcula una ruta para visualizar sus métricas.
         </p>
-      </div>
+      </section>
     );
   }
 
-  const algorithmNames: Record<string, string> = {
-    fuerzaBruta: "Fuerza Bruta",
-    backtracking: "Backtracking",
-    divideVencenas: "Divide y Vencerás",
-  };
-
-  const algorithmName =
-    algorithmNames[result.algoritmo] ??
-    result.algoritmo;
-
-  const distanceKm =
-    result.costo_total !== null &&
-    result.criterio === "distancia"
-      ? result.costo_total / 1000
-      : null;
+  const isDeliveryResult = "delivery_order" in result;
 
   return (
-    <div className="space-y-4 rounded-xl bg-white p-5 shadow">
+    <section className="rounded-2xl border border-orange-100 bg-white p-5 shadow-sm">
+      <div className="mb-4 flex items-center justify-between gap-3">
+        <div>
+          <h2 className="text-lg font-bold text-gray-900">
+            Resultado del recorrido
+          </h2>
+          <p className="text-sm text-gray-500">
+            Algoritmo: {result.algorithm}
+          </p>
+        </div>
 
-      {/* TÍTULO */}
-      <div>
-        <h2 className="text-lg font-bold text-gray-800">
-          Resultado de la ruta
-        </h2>
-
-        <p className="mt-1 text-sm text-gray-500">
-          Ruta calculada utilizando la red vial de
-          Miraflores y San Isidro.
-        </p>
+        {isDeliveryResult && (
+          <span
+            className={`rounded-full px-3 py-1 text-xs font-semibold ${
+              result.is_optimal
+                ? "bg-green-100 text-green-700"
+                : "bg-amber-100 text-amber-700"
+            }`}
+          >
+            {result.is_optimal ? "Óptimo" : "Solución aproximada"}
+          </span>
+        )}
       </div>
 
-      {/* DISTRITOS */}
-      <div className="flex flex-wrap gap-2">
-        <span className="rounded-full bg-orange-50 px-3 py-1 text-[10px] font-bold text-[#FF6600]">
-          Miraflores
-        </span>
-
-        <span className="rounded-full bg-orange-50 px-3 py-1 text-[10px] font-bold text-[#FF6600]">
-          San Isidro
-        </span>
-      </div>
-
-      {/* MÉTRICAS */}
       <div className="grid grid-cols-2 gap-3">
+        <Metric
+          label="Distancia real"
+          value={formatDistance(result.distancia_total_m)}
+        />
 
-        {/* DISTANCIA */}
-        <div className="rounded-lg bg-gray-100 p-4">
-          <p className="text-sm text-gray-500">
-            Distancia
-          </p>
+        <Metric
+          label="Costo ponderado"
+          value={formatNumber(result.weighted_cost)}
+        />
 
-          <p className="mt-1 text-xl font-bold text-gray-800">
-            {distanceKm !== null
-              ? `${distanceKm.toFixed(2)} km`
-              : "—"}
-          </p>
-        </div>
+        <Metric
+          label="Tiempo de ejecución"
+          value={`${formatNumber(result.execution_time_ms)} ms`}
+        />
 
-        {/* NODOS */}
-        <div className="rounded-lg bg-gray-100 p-4">
-          <p className="text-sm text-gray-500">
-            Nodos de la ruta
-          </p>
-
-          <p className="mt-1 text-xl font-bold text-gray-800">
-            {result.ruta?.length ?? "—"}
-          </p>
-        </div>
-
-        {/* DESTINOS */}
-        <div className="rounded-lg bg-gray-100 p-4">
-          <p className="text-sm text-gray-500">
-            Destinos
-          </p>
-
-          <p className="mt-1 text-xl font-bold text-gray-800">
-            {result.destinos?.length ?? "—"}
-          </p>
-        </div>
-
-        {/* NODOS DEL GRAFO */}
-        <div className="rounded-lg bg-gray-100 p-4">
-          <p className="text-sm text-gray-500">
-            Nodos del grafo
-          </p>
-
-          <p className="mt-1 text-xl font-bold text-gray-800">
-            {result.estadisticas_grafo?.nodos ?? "—"}
-          </p>
-        </div>
+        <Metric
+          label="Nodos visitados"
+          value={formatNumber(result.nodos_visitados)}
+        />
       </div>
 
-      {/* ALGORITMO */}
-      <div className="rounded-lg border border-gray-200 p-4">
-        <p className="text-sm text-gray-500">
-          Algoritmo utilizado
-        </p>
+      {isDeliveryResult && (
+        <>
+          <div className="mt-3 grid grid-cols-2 gap-3">
+            <Metric
+              label="Tiempo de matriz"
+              value={`${formatNumber(result.matrix_time_ms)} ms`}
+            />
 
-        <p className="mt-1 text-lg font-bold text-gray-800">
-          {algorithmName}
-        </p>
-      </div>
+            <Metric
+              label="Estados explorados"
+              value={formatNumber(result.states_explored)}
+            />
 
-      {/* ORIGEN */}
-      <div className="rounded-lg border border-gray-200 p-4">
-        <p className="text-sm text-gray-500">
-          Punto de origen
-        </p>
+            <Metric
+              label="Ramas podadas"
+              value={formatNumber(result.branches_pruned)}
+            />
 
-        <div className="mt-2 flex items-center justify-between gap-3">
-          <div>
-            <p className="text-sm font-bold text-gray-800">
-              Nodo {result.origen?.id}
-            </p>
-
-            <p className="text-xs text-gray-500">
-              {result.origen?.lat},{" "}
-              {result.origen?.lon}
-            </p>
+            <Metric
+              label="Paradas"
+              value={String(
+                result.delivery_order.filter((index) => index !== 0).length
+              )}
+            />
           </div>
 
-          {result.origen?.distrito && (
-            <span className="rounded-full bg-orange-50 px-2.5 py-1 text-[9px] font-bold text-[#FF6600]">
-              {result.origen.distrito}
-            </span>
-          )}
-        </div>
-      </div>
+          <div className="mt-5">
+            <h3 className="mb-2 text-sm font-semibold text-gray-800">
+              Orden de visita
+            </h3>
 
-      {/* DESTINOS */}
-      <div className="rounded-lg border border-gray-200 p-4">
-        <p className="text-sm text-gray-500">
-          Destinos de entrega
-        </p>
-
-        <div className="mt-2 space-y-2">
-          {result.destinos?.map((destino, index) => (
-            <div
-              key={`${destino}-${index}`}
-              className="flex items-center justify-between rounded-lg bg-gray-50 px-3 py-2"
-            >
-              <span className="text-xs font-bold text-gray-800">
-                Destino {index + 1}
-              </span>
-
-              <span className="text-xs text-gray-500">
-                Nodo {destino}
-              </span>
+            <div className="flex flex-wrap items-center gap-2">
+              {result.delivery_order.map((index, position) => (
+                <span
+                  key={`${index}-${position}`}
+                  className="rounded-lg bg-orange-50 px-3 py-2 text-sm font-semibold text-orange-700"
+                >
+                  {index === 0 ? "Origen" : `Destino ${index}`}
+                </span>
+              ))}
             </div>
-          ))}
-        </div>
-      </div>
 
-      {/* INFORMACIÓN DEL ALGORITMO */}
-      <div className="rounded-lg bg-gray-50 p-4">
-        <p className="text-sm font-semibold text-gray-700">
-          Información del algoritmo
+            <p className="mt-2 text-xs text-gray-500">
+              El índice 0 representa el origen; los índices 1 en adelante
+              corresponden a los destinos en el orden enviado al backend.
+            </p>
+          </div>
+        </>
+      )}
+
+      <div className="mt-4 rounded-lg bg-gray-50 p-3">
+        <p className="text-xs leading-5 text-gray-600">
+          El costo ponderado considera los pesos de tráfico del modelo.
+          No representa kilómetros físicos. Para la distancia recorrida,
+          utiliza la distancia real indicada arriba.
         </p>
-
-        {result.algoritmo === "fuerzaBruta" && (
-          <p className="mt-1 text-sm leading-relaxed text-gray-500">
-            Fuerza Bruta evalúa las diferentes posibilidades
-            de recorrido entre los destinos para encontrar
-            una solución.
-          </p>
-        )}
-
-        {result.algoritmo === "backtracking" && (
-          <p className="mt-1 text-sm leading-relaxed text-gray-500">
-            Backtracking construye posibles recorridos y
-            descarta alternativas que ya no pueden mejorar
-            la solución encontrada.
-          </p>
-        )}
-
-        {result.algoritmo === "divideVencenas" && (
-          <p className="mt-1 text-sm leading-relaxed text-gray-500">
-            Divide y Vencerás divide el problema en
-            subproblemas más pequeños y posteriormente
-            combina sus resultados.
-          </p>
-        )}
       </div>
+    </section>
+  );
+}
 
-      {/* ESTADÍSTICAS DEL GRAFO */}
-      <div className="rounded-lg border border-gray-200 p-4">
-        <p className="text-sm font-semibold text-gray-700">
-          Red utilizada
-        </p>
-
-        <div className="mt-3 grid grid-cols-2 gap-3 text-xs">
-          <div>
-            <p className="text-gray-400">
-              Nodos
-            </p>
-
-            <p className="font-bold text-gray-800">
-              {result.estadisticas_grafo?.nodos ?? "—"}
-            </p>
-          </div>
-
-          <div>
-            <p className="text-gray-400">
-              Aristas
-            </p>
-
-            <p className="font-bold text-gray-800">
-              {result.estadisticas_grafo?.edges ?? "—"}
-            </p>
-          </div>
-
-          <div>
-            <p className="text-gray-400">
-              Grafo dirigido
-            </p>
-
-            <p className="font-bold text-gray-800">
-              {result.estadisticas_grafo?.dirigido
-                ? "Sí"
-                : "No"}
-            </p>
-          </div>
-
-          <div>
-            <p className="text-gray-400">
-              Multigrafo
-            </p>
-
-            <p className="font-bold text-gray-800">
-              {result.estadisticas_grafo?.multigrafo
-                ? "Sí"
-                : "No"}
-            </p>
-          </div>
-        </div>
-      </div>
+function Metric({
+  label,
+  value,
+}: {
+  label: string;
+  value: string;
+}) {
+  return (
+    <div className="rounded-xl border border-gray-100 bg-gray-50 p-3">
+      <p className="text-xs text-gray-500">{label}</p>
+      <p className="mt-1 break-words text-lg font-bold text-gray-900">
+        {value}
+      </p>
     </div>
   );
 }

@@ -1,90 +1,87 @@
-import { apiFetch } from "./api";
+import { apiFetch } from "@/services/api";
 
+import type {
+  AlgorithmsInfo,
+  DeliveryAlgorithm,
+  DeliveryRouteRequest,
+  DeliveryRouteResponse,
+  RouteRequest,
+  RouteResponse,
+} from "@/types/route";
 
-// =========================================================
-// TIPOS
-// =========================================================
-
-export interface RouteRequest {
-  ubicacion_inicial: string;
-
-  algoritmo:
-    | "fuerzaBruta"
-    | "backtracking"
-    | "divideVencenas";
-
-  destinos: number[];
-}
-
-
-export interface RoutePoint {
-  id: string | number;
-  lat: number;
-  lon: number;
-  distrito: string | null;
-}
-
-
-export interface RouteResult {
-  mensaje: string;
-
-  algoritmo:
-    | "fuerzaBruta"
-    | "backtracking"
-    | "divideVencenas";
-
-  criterio: string;
-
-  origen: RoutePoint;
-
-  destinos: number[];
-
-  ruta: Array<string | number>;
-
-  puntos_mapa: RoutePoint[];
-
-  costo_total: number | null;
-
-  estadisticas_grafo: {
-    nodos: number;
-    edges: number;
-    dirigido: boolean;
-    multigrafo: boolean;
-  };
-}
-
-
-// =========================================================
-// CALCULAR RUTA
-// =========================================================
-
-export async function calculateRoute(
+// Ruta directa: Dijkstra
+export function calculateRoute(
   request: RouteRequest
-): Promise<RouteResult> {
-
-  const response = await apiFetch(
-    "/routes/repartidor",
-    {
-      method: "POST",
-
-      body: JSON.stringify(request),
-    }
-  );
-
-  return response as RouteResult;
+): Promise<RouteResponse> {
+  return apiFetch<RouteResponse>("/routes/calculate", {
+    method: "POST",
+    body: JSON.stringify({
+      ...request,
+      algorithm: "dijkstra",
+    }),
+  });
 }
 
+// Múltiples entregas: Fuerza Bruta, Backtracking o Divide y Vencerás
+export function calculateDeliveries(
+  request: DeliveryRouteRequest
+): Promise<DeliveryRouteResponse> {
+  return apiFetch<DeliveryRouteResponse>("/routes/deliveries", {
+    method: "POST",
+    body: JSON.stringify(request),
+  });
+}
 
-// =========================================================
-// OBTENER INFORMACIÓN DEL GRAFO
-// =========================================================
+// Comparar algoritmos con el mismo conjunto de entregas
+export async function compareAlgorithms(
+  request: DeliveryRouteRequest
+) {
+  const algorithms: DeliveryAlgorithm[] = [
+    "brute_force",
+    "backtracking",
+    "divide_conquer",
+  ];
 
-export async function getGraphInfo() {
+  const algorithmsToRun =
+    request.destinations.length > 8
+      ? algorithms.filter((algorithm) => algorithm !== "brute_force")
+      : algorithms;
 
-  return apiFetch(
-    "/routes/grafo",
-    {
-      method: "GET",
-    }
+  const results = await Promise.all(
+    algorithmsToRun.map(async (algorithm) => {
+      try {
+        const result = await calculateDeliveries({
+          ...request,
+          algorithm,
+        });
+
+        return {
+          algorithm,
+          result,
+          error: null,
+        };
+      } catch (error) {
+        return {
+          algorithm,
+          result: null,
+          error:
+            error instanceof Error
+              ? error.message
+              : "No se pudo calcular el algoritmo.",
+        };
+      }
+    })
   );
+
+  return results;
+}
+
+// Consultar algoritmos disponibles
+export function obtenerAlgoritmos(): Promise<AlgorithmsInfo> {
+  return apiFetch<AlgorithmsInfo>("/routes/");
+}
+
+// Convertir "08:00" a 8
+export function horaAEntero(hora: string): number {
+  return Number.parseInt(hora.split(":")[0], 10);
 }

@@ -1,59 +1,68 @@
-export type Algorithm =
-  | "fuerzaBruta"
-  | "backtracking"
-  | "divideVencenas";
-
-export interface Location {
-  id: string;
-  name: string;
-  address: string;
-
-  // Distritos permitidos para el proyecto
-  district: "Miraflores" | "San Isidro";
-
-  // ID del nodo correspondiente en el grafo
-  nodeId: string | number;
-
-  coordinates: {
-    lat: number;
-    lon: number;
-  };
-}
-
-export interface RouteRequest {
-  ubicacion_inicial: string;
-  algoritmo: Algorithm;
-  destinos: number[];
-}
-
-export interface RoutePoint {
-  id: string | number;
+export interface Coordinate {
   lat: number;
   lon: number;
-  distrito: string | null;
 }
 
-export interface RouteResult {
-  mensaje: string;
+export type DeliveryAlgorithm =
+  | "brute_force"
+  | "backtracking"
+  | "divide_conquer";
 
-  algoritmo: Algorithm;
+export type RouteMode = "direct" | "deliveries";
 
-  criterio: string;
+export interface RouteRequest {
+  origin: Coordinate;
+  destination: Coordinate;
+  algorithm?: "dijkstra";
+  traffic_hour?: number;
+}
 
-  origen: RoutePoint;
+export interface DeliveryRouteRequest {
+  origin: Coordinate;
+  destinations: Coordinate[];
+  algorithm: DeliveryAlgorithm;
+  traffic_hour?: number;
+  return_to_origin?: boolean;
+}
 
-  destinos: Array<string | number>;
+export interface RouteResponse {
+  algorithm: string;
+  execution_time_ms: number;
+  nodos_visitados: number;
+  distancia_total_m: number;
+  weighted_cost: number;
+  path: Coordinate[];
+}
 
-  ruta: Array<string | number>;
+export interface DeliveryRouteResponse {
+  algorithm: string;
+  execution_time_ms: number;
+  matrix_time_ms: number;
+  nodos_visitados: number;
+  states_explored: number;
+  branches_pruned: number;
+  distancia_total_m: number;
+  weighted_cost: number;
+  delivery_order: number[];
+  is_optimal: boolean;
+  path: Coordinate[];
+}
 
-  puntos_mapa: RoutePoint[];
-
-  costo_total: number | null;
-
-  estadisticas_grafo: {
-    nodos: number;
-    edges: number;
-    dirigido: boolean;
-    multigrafo: boolean;
+export interface AlgorithmsInfo {
+  message: string;
+  algorithms: {
+    direct_route: string[];
+    deliveries: {
+      name: DeliveryAlgorithm;
+      max_deliveries: number;
+      optimal: boolean;
+    }[];
   };
+}
+
+export interface Place {
+  id: string;
+  name: string;
+  district: "Miraflores" | "San Isidro";
+  coordinates: Coordinate;
 }

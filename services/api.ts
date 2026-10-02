@@ -1,24 +1,27 @@
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
-export async function apiFetch(
+export async function apiFetch<T>(
   endpoint: string,
-  options?: RequestInit
-) {
+  options: RequestInit = {}
+): Promise<T> {
   const response = await fetch(`${API_URL}${endpoint}`, {
     ...options,
     headers: {
       "Content-Type": "application/json",
-      ...options?.headers,
+      ...options.headers,
     },
   });
 
   if (!response.ok) {
-    const errorText = await response.text();
+    const errorData = await response.json().catch(() => ({}));
 
-    throw new Error(
-      errorText || `Error HTTP: ${response.status}`
-    );
+    const message =
+      typeof errorData.detail === "string"
+        ? errorData.detail
+        : "Datos inválidos. Revisa los campos del formulario.";
+
+    throw new Error(message);
   }
 
-  return response.json();
+  return response.json() as Promise<T>;
 }

@@ -1,324 +1,438 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 
 import type {
-  Algorithm,
-  Location,
+  Coordinate,
+  DeliveryAlgorithm,
+  DeliveryRouteRequest,
+  Place,
+  RouteMode,
   RouteRequest,
 } from "@/types/route";
 
 interface RouteFormProps {
-  onCalculate: (request: RouteRequest) => void;
+  onCalculateDirect: (request: RouteRequest) => void;
+  onCalculateDeliveries: (request: DeliveryRouteRequest) => void;
+  onCompare: (request: DeliveryRouteRequest) => void;
   loading: boolean;
+  onClear: () => void;
 }
 
-/*
- * IMPORTANTE:
- * Los nodeId deben corresponder a nodos REALES
- * del archivo:
- *
- * app/data/graph/miraflores_san_isidro.json
- *
- * Estos valores son ejemplos.
- * Reemplázalos por los IDs reales de tu JSON.
- */
-const locations: Location[] = [
+const places: Place[] = [
   {
-    id: "local-1",
-    name: "Local Miraflores Centro",
-    address: "Av. Larco",
+    id: "miraflores-centro",
+    name: "Av. Larco - Miraflores",
     district: "Miraflores",
-    nodeId: 1,
-    coordinates: {
-      lat: -12.1219,
-      lon: -77.0297,
-    },
+    coordinates: { lat: -12.1219, lon: -77.0297 },
   },
   {
-    id: "local-2",
-    name: "Local San Isidro",
-    address: "Av. Javier Prado",
+    id: "san-isidro-javier-prado",
+    name: "Av. Javier Prado - San Isidro",
     district: "San Isidro",
-    nodeId: 2,
-    coordinates: {
-      lat: -12.0925,
-      lon: -77.0365,
-    },
+    coordinates: { lat: -12.0925, lon: -77.0365 },
   },
   {
-    id: "local-3",
-    name: "Local Miraflores Sur",
-    address: "Av. Reducto",
+    id: "miraflores-sur",
+    name: "Av. Reducto - Miraflores",
     district: "Miraflores",
-    nodeId: 3,
-    coordinates: {
-      lat: -12.1328,
-      lon: -77.0225,
-    },
+    coordinates: { lat: -12.1328, lon: -77.0225 },
+  },
+  {
+    id: "san-isidro-centro",
+    name: "Centro de San Isidro",
+    district: "San Isidro",
+    coordinates: { lat: -12.097, lon: -77.033 },
   },
 ];
 
-const algorithms: {
-  value: Algorithm;
-  label: string;
-  description: string;
-}[] = [
-  {
-    value: "fuerzaBruta",
-    label: "Fuerza Bruta",
-    description:
-      "Evalúa las diferentes posibilidades de recorrido para encontrar una solución.",
-  },
-  {
-    value: "backtracking",
-    label: "Backtracking",
-    description:
-      "Descarta recorridos que ya no pueden mejorar la solución.",
-  },
-  {
-    value: "divideVencenas",
-    label: "Divide y Vencerás",
-    description:
-      "Divide el problema en partes más pequeñas y combina sus resultados.",
-  },
-];
+const algorithmLimits: Record<DeliveryAlgorithm, number> = {
+  brute_force: 8,
+  backtracking: 12,
+  divide_conquer: 30,
+};
 
 export default function RouteForm({
-  onCalculate,
+  onCalculateDirect,
+  onCalculateDeliveries,
+  onCompare,
   loading,
+  onClear,
 }: RouteFormProps) {
-  const [originId, setOriginId] = useState("local-1");
-  const [destinationId, setDestinationId] =
-    useState("local-2");
-
+  const [mode, setMode] = useState<RouteMode>("deliveries");
   const [algorithm, setAlgorithm] =
-    useState<Algorithm>("backtracking");
+    useState<DeliveryAlgorithm>("backtracking");
 
-  const origin = locations.find(
-    (location) => location.id === originId
+  const [originId, setOriginId] = useState(places[0].id);
+  const [destinationId, setDestinationId] = useState(places[1].id);
+
+  const [deliveryIds, setDeliveryIds] = useState<string[]>([
+    places[1].id,
+    places[2].id,
+  ]);
+
+  const [trafficHour, setTrafficHour] = useState("08:00");
+  const [returnToOrigin, setReturnToOrigin] = useState(false);
+
+  const origin = useMemo(
+    () => places.find((place) => place.id === originId)!,
+    [originId]
   );
 
-  const destination = locations.find(
-    (location) => location.id === destinationId
+  const destination = useMemo(
+    () => places.find((place) => place.id === destinationId)!,
+    [destinationId]
   );
 
-  const handleSubmit = (
-    event: React.FormEvent<HTMLFormElement>
-  ) => {
+  const limit = algorithmLimits[algorithm];
+
+  const availableDestinations = places.filter(
+    (place) =>
+      place.id !== originId &&
+      !deliveryIds.includes(place.id)
+  );
+
+  function addDestination() {
+    if (deliveryIds.length >= limit) return;
+
+    const next = availableDestinations[0];
+    if (!next) return;
+
+    setDeliveryIds((current) => [...current, next.id]);
+  }
+
+  function removeDestination(id: string) {
+    setDeliveryIds((current) =>
+      current.filter((destinationId) => destinationId !== id)
+    );
+  }
+
+  function changeAlgorithm(next: DeliveryAlgorithm) {
+    setAlgorithm(next);
+
+    const nextLimit = algorithmLimits[next];
+
+    if (deliveryIds.length > nextLimit) {
+      setDeliveryIds((current) => current.slice(0, nextLimit));
+    }
+  }
+
+  function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
-    if (!origin || !destination) {
+    const hour = Number.parseInt(trafficHour.split(":")[0], 10);
+
+    if (mode === "direct") {
+      if (originId === destinationId) {
+        alert("Selecciona un destino distinto del origen.");
+        return;
+      }
+
+      const request: RouteRequest = {
+        origin: origin.coordinates,
+        destination: destination.coordinates,
+        algorithm: "dijkstra",
+        traffic_hour: hour,
+      };
+
+      onCalculateDirect(request);
       return;
     }
 
-    if (origin.id === destination.id) {
-      alert(
-        "El origen y el destino deben ser diferentes."
-      );
+    if (deliveryIds.length === 0) {
+      alert("Agrega al menos un destino.");
       return;
     }
 
-    /*
-     * El origen se envía como coordenadas.
-     *
-     * El backend buscará el nodo del grafo
-     * más cercano a esta ubicación.
-     */
-    const ubicacionInicial =
-      `${origin.coordinates.lat},${origin.coordinates.lon}`;
+    const destinations = deliveryIds
+      .map((id) => places.find((place) => place.id === id))
+      .filter((place): place is Place => Boolean(place))
+      .map((place) => place.coordinates);
 
-    /*
-     * El destino debe ser un ID REAL del grafo.
-     *
-     * No enviamos "local-2".
-     * Enviamos el nodeId correspondiente
-     * al grafo generado desde OpenStreetMap.
-     */
-    const request: RouteRequest = {
-      ubicacion_inicial: ubicacionInicial,
-      algoritmo: algorithm,
-      destinos: [Number(destination.nodeId)],
+    const request: DeliveryRouteRequest = {
+      origin: origin.coordinates,
+      destinations,
+      algorithm,
+      traffic_hour: hour,
+      return_to_origin: returnToOrigin,
     };
 
-    onCalculate(request);
-  };
+    onCalculateDeliveries(request);
+  }
 
-  const selectedAlgorithm = algorithms.find(
-    (item) => item.value === algorithm
-  );
+  function handleCompare() {
+    if (deliveryIds.length === 0) {
+      alert("Agrega al menos un destino.");
+      return;
+    }
+
+    const destinations = deliveryIds
+      .map((id) => places.find((place) => place.id === id))
+      .filter((place): place is Place => Boolean(place))
+      .map((place) => place.coordinates);
+
+    onCompare({
+      origin: origin.coordinates,
+      destinations,
+      algorithm,
+      traffic_hour: Number.parseInt(trafficHour.split(":")[0], 10),
+      return_to_origin: returnToOrigin,
+    });
+  }
 
   return (
     <form
       onSubmit={handleSubmit}
-      className="space-y-4"
+      className="flex flex-col gap-5 rounded-2xl border border-orange-100 bg-white p-5 shadow-sm"
     >
-      {/* ZONA DEL PROYECTO */}
-      <div className="rounded-xl border border-orange-100 bg-orange-50 p-3">
-        <p className="text-[8px] font-black uppercase tracking-wider text-[#FF6600]">
-          Zona de operación
-        </p>
-
-        <p className="mt-1 text-xs font-bold text-slate-800">
-          Miraflores · San Isidro
-        </p>
-
-        <p className="mt-1 text-[9px] leading-relaxed text-slate-500">
-          La optimización utiliza únicamente la red vial
-          correspondiente a estos distritos.
+      <div>
+        <h2 className="text-lg font-bold text-gray-900">
+          Configurar recorrido
+        </h2>
+        <p className="mt-1 text-sm text-gray-500">
+          Selecciona el tipo de ruta y los puntos de recorrido.
         </p>
       </div>
 
-      {/* ORIGEN */}
+      {/* Modo */}
       <div>
-        <label className="mb-1.5 block text-[9px] font-black uppercase tracking-wider text-slate-400">
-          Local de origen
+        <label className="mb-2 block text-sm font-semibold text-gray-700">
+          Tipo de recorrido
+        </label>
+
+        <div className="grid grid-cols-2 gap-2">
+          <button
+            type="button"
+            onClick={() => setMode("deliveries")}
+            className={`rounded-lg border px-3 py-3 text-sm font-medium ${
+              mode === "deliveries"
+                ? "border-orange-500 bg-orange-50 text-orange-700"
+                : "border-gray-200 text-gray-600"
+            }`}
+          >
+            Múltiples entregas
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setMode("direct")}
+            className={`rounded-lg border px-3 py-3 text-sm font-medium ${
+              mode === "direct"
+                ? "border-orange-500 bg-orange-50 text-orange-700"
+                : "border-gray-200 text-gray-600"
+            }`}
+          >
+            Ruta directa
+          </button>
+        </div>
+      </div>
+
+      {/* Origen */}
+      <div>
+        <label
+          htmlFor="origin"
+          className="mb-2 block text-sm font-semibold text-gray-700"
+        >
+          Punto de origen
         </label>
 
         <select
+          id="origin"
           value={originId}
-          onChange={(event) =>
-            setOriginId(event.target.value)
-          }
-          disabled={loading}
-          className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-xs font-bold text-slate-900 outline-none transition focus:border-[#FF6600] disabled:cursor-not-allowed disabled:bg-slate-50"
+          onChange={(event) => setOriginId(event.target.value)}
+          className="w-full rounded-lg border border-gray-300 bg-white px-3 py-3 text-sm text-gray-800 outline-none focus:border-orange-500"
         >
-          {locations.map((location) => (
-            <option
-              key={location.id}
-              value={location.id}
-            >
-              {location.name} — {location.district}
+          {places.map((place) => (
+            <option key={place.id} value={place.id}>
+              {place.name}
             </option>
           ))}
         </select>
-
-        {origin && (
-          <div className="mt-1">
-            <p className="text-[9px] text-slate-400">
-              {origin.address}
-            </p>
-
-            <p className="text-[9px] font-semibold text-orange-500">
-              Distrito: {origin.district}
-            </p>
-          </div>
-        )}
       </div>
 
-      {/* DESTINO */}
-      <div>
-        <label className="mb-1.5 block text-[9px] font-black uppercase tracking-wider text-slate-400">
-          Destino de entrega
-        </label>
-
-        <select
-          value={destinationId}
-          onChange={(event) =>
-            setDestinationId(event.target.value)
-          }
-          disabled={loading}
-          className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-xs font-bold text-slate-900 outline-none transition focus:border-[#FF6600] disabled:cursor-not-allowed disabled:bg-slate-50"
-        >
-          {locations.map((location) => (
-            <option
-              key={location.id}
-              value={location.id}
-            >
-              {location.name} — {location.district}
-            </option>
-          ))}
-        </select>
-
-        {destination && (
-          <div className="mt-1">
-            <p className="text-[9px] text-slate-400">
-              {destination.address}
-            </p>
-
-            <p className="text-[9px] font-semibold text-orange-500">
-              Distrito: {destination.district}
-            </p>
-          </div>
-        )}
-      </div>
-
-      {/* ALGORITMO */}
-      <div>
-        <label className="mb-1.5 block text-[9px] font-black uppercase tracking-wider text-slate-400">
-          Algoritmo de optimización
-        </label>
-
-        <select
-          value={algorithm}
-          onChange={(event) =>
-            setAlgorithm(
-              event.target.value as Algorithm
-            )
-          }
-          disabled={loading}
-          className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-xs font-bold text-slate-900 outline-none transition focus:border-[#FF6600] disabled:cursor-not-allowed disabled:bg-slate-50"
-        >
-          {algorithms.map((item) => (
-            <option
-              key={item.value}
-              value={item.value}
-            >
-              {item.label}
-            </option>
-          ))}
-        </select>
-
-        {selectedAlgorithm && (
-          <p className="mt-1.5 text-[9px] leading-relaxed text-slate-500">
-            {selectedAlgorithm.description}
-          </p>
-        )}
-      </div>
-
-      {/* RESUMEN */}
-      <div className="rounded-xl bg-orange-50 p-3">
-        <p className="text-[8px] font-black uppercase tracking-wider text-[#FF6600]">
-          Recorrido
-        </p>
-
-        <div className="mt-2">
-          <p className="text-xs font-black text-slate-900">
-            {origin?.name}
-          </p>
-
-          <p className="text-[9px] text-slate-400">
-            {origin?.district}
-          </p>
-        </div>
-
-        <div className="my-2 ml-1 h-4 border-l border-dashed border-orange-300" />
-
+      {/* Ruta directa */}
+      {mode === "direct" && (
         <div>
-          <p className="text-xs font-black text-slate-900">
-            {destination?.name}
-          </p>
+          <label
+            htmlFor="direct-destination"
+            className="mb-2 block text-sm font-semibold text-gray-700"
+          >
+            Destino
+          </label>
 
-          <p className="text-[9px] text-slate-400">
-            {destination?.district}
+          <select
+            id="direct-destination"
+            value={destinationId}
+            onChange={(event) => setDestinationId(event.target.value)}
+            className="w-full rounded-lg border border-gray-300 bg-white px-3 py-3 text-sm text-gray-800 outline-none focus:border-orange-500"
+          >
+            {places
+              .filter((place) => place.id !== originId)
+              .map((place) => (
+                <option key={place.id} value={place.id}>
+                  {place.name}
+                </option>
+              ))}
+          </select>
+
+          <p className="mt-2 text-xs text-gray-500">
+            Se utilizará Dijkstra para encontrar el recorrido entre ambos puntos.
           </p>
         </div>
+      )}
+
+      {/* Entregas */}
+      {mode === "deliveries" && (
+        <>
+          <div>
+            <label
+              htmlFor="algorithm"
+              className="mb-2 block text-sm font-semibold text-gray-700"
+            >
+              Algoritmo
+            </label>
+
+            <select
+              id="algorithm"
+              value={algorithm}
+              onChange={(event) =>
+                changeAlgorithm(event.target.value as DeliveryAlgorithm)
+              }
+              className="w-full rounded-lg border border-gray-300 bg-white px-3 py-3 text-sm text-gray-800 outline-none focus:border-orange-500"
+            >
+              <option value="brute_force">Fuerza Bruta (máx. 8)</option>
+              <option value="backtracking">Backtracking (máx. 12)</option>
+              <option value="divide_conquer">
+                Divide y Vencerás (máx. 30)
+              </option>
+            </select>
+          </div>
+
+          <div>
+            <div className="mb-2 flex items-center justify-between">
+              <label className="text-sm font-semibold text-gray-700">
+                Destinos
+              </label>
+              <span className="text-xs text-gray-500">
+                {deliveryIds.length}/{limit}
+              </span>
+            </div>
+
+            <div className="flex flex-col gap-2">
+              {deliveryIds.map((id, index) => {
+                const place = places.find((item) => item.id === id);
+
+                return (
+                  <div
+                    key={`${id}-${index}`}
+                    className="flex items-center gap-2 rounded-lg border border-gray-200 p-3"
+                  >
+                    <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-orange-100 text-xs font-bold text-orange-700">
+                      {index + 1}
+                    </span>
+
+                    <span className="min-w-0 flex-1 text-sm text-gray-700">
+                      {place?.name}
+                    </span>
+
+                    <button
+                      type="button"
+                      onClick={() => removeDestination(id)}
+                      aria-label={`Eliminar ${place?.name}`}
+                      className="rounded px-2 py-1 text-sm text-red-600 hover:bg-red-50"
+                    >
+                      Quitar
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+
+            <button
+              type="button"
+              onClick={addDestination}
+              disabled={
+                deliveryIds.length >= limit ||
+                availableDestinations.length === 0
+              }
+              className="mt-3 w-full rounded-lg border border-dashed border-orange-300 px-3 py-3 text-sm font-semibold text-orange-700 hover:bg-orange-50 disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              + Agregar destino
+            </button>
+
+            <p className="mt-2 text-xs text-gray-500">
+              Los lugares de esta versión son ejemplos de interfaz. Puedes
+              ampliar la lista o reemplazarla por selección desde el mapa.
+            </p>
+          </div>
+
+          <label className="flex items-center gap-3 text-sm text-gray-700">
+            <input
+              type="checkbox"
+              checked={returnToOrigin}
+              onChange={(event) =>
+                setReturnToOrigin(event.target.checked)
+              }
+              className="h-4 w-4 accent-orange-600"
+            />
+            Regresar al punto de origen
+          </label>
+        </>
+      )}
+
+      {/* Hora */}
+      <div>
+        <label
+          htmlFor="traffic-hour"
+          className="mb-2 block text-sm font-semibold text-gray-700"
+        >
+          Hora estimada de salida
+        </label>
+
+        <select
+          id="traffic-hour"
+          value={trafficHour}
+          onChange={(event) => setTrafficHour(event.target.value)}
+          className="w-full rounded-lg border border-gray-300 bg-white px-3 py-3 text-sm text-gray-800 outline-none focus:border-orange-500"
+        >
+          {Array.from({ length: 24 }, (_, hour) => {
+            const value = `${String(hour).padStart(2, "0")}:00`;
+
+            return (
+              <option key={value} value={value}>
+                {value}
+              </option>
+            );
+          })}
+        </select>
       </div>
 
-      {/* BOTÓN */}
       <button
         type="submit"
-        disabled={
-          loading ||
-          !origin ||
-          !destination ||
-          origin.id === destination.id
-        }
-        className="w-full rounded-xl bg-[#FF6600] px-4 py-3 text-xs font-black text-white shadow-[0_4px_12px_rgba(255,102,0,0.25)] transition hover:bg-[#e95700] disabled:cursor-not-allowed disabled:opacity-60"
+        disabled={loading}
+        className="w-full rounded-lg bg-[#FF6600] px-4 py-3 font-semibold text-white transition hover:bg-orange-700 disabled:cursor-not-allowed disabled:opacity-60"
       >
-        {loading
-          ? "Calculando recorrido..."
-          : "Optimizar recorrido"}
+        {loading ? "Calculando recorrido..." : "Calcular ruta"}
+      </button>
+
+      {mode === "deliveries" && (
+        <button
+          type="button"
+          onClick={handleCompare}
+          disabled={loading}
+          className="w-full rounded-lg border border-orange-500 px-4 py-3 font-semibold text-orange-700 hover:bg-orange-50 disabled:opacity-50"
+        >
+          Comparar algoritmos
+        </button>
+      )}
+
+      <button
+        type="button"
+        onClick={onClear}
+        disabled={loading}
+        className="w-full rounded-lg border border-gray-200 px-4 py-3 text-sm font-medium text-gray-600 hover:bg-gray-50"
+      >
+        Limpiar resultado
       </button>
     </form>
   );
