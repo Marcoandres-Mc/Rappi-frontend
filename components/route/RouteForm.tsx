@@ -179,6 +179,8 @@ export default function RouteForm({
       return_to_origin: returnToOrigin,
     });
   }
+  const [originOpen, setOriginOpen] = useState(false);
+  const [destinationOpen, setDestinationOpen] = useState(false);
 
   return (
     <form
@@ -229,57 +231,263 @@ export default function RouteForm({
 
       {/* Origen */}
       <div>
-        <label
-          htmlFor="origin"
-          className="mb-2 block text-sm font-semibold text-gray-700"
-        >
+        <label className="mb-2 block text-sm font-semibold text-gray-700">
           Punto de origen
         </label>
 
-        <select
-          id="origin"
-          value={originId}
-          onChange={(event) => setOriginId(event.target.value)}
-          className="w-full rounded-lg border border-gray-300 bg-white px-3 py-3 text-sm text-gray-800 outline-none focus:border-orange-500"
-        >
-          {places.map((place) => (
-            <option key={place.id} value={place.id}>
-              {place.name}
-            </option>
-          ))}
-        </select>
+        <div className="relative">
+          {/* Botón seleccionado */}
+          <button
+            type="button"
+            onClick={() => setOriginOpen(!originOpen)}
+            className="flex w-full items-center justify-between rounded-lg border border-gray-300 bg-white px-3 py-3 text-left text-sm text-gray-800 outline-none transition hover:border-gray-400 focus:border-orange-500"
+          >
+            <div className="flex items-center gap-3">
+              {(() => {
+                const selectedIndex = places.findIndex(
+                  (place) => place.id === originId
+                );
+
+                const colors = [
+                  "#7C3AED", // Morado
+                  "#2563EB", // Azul
+                  "#16A34A", // Verde
+                  "#DC2626", // Rojo
+                ];
+
+                const selectedColor =
+                  colors[selectedIndex % colors.length];
+
+                return (
+                  <span
+                    className="h-3 w-3 shrink-0 rounded-full border-2 border-white shadow"
+                    style={{
+                      backgroundColor: selectedColor,
+                    }}
+                  />
+                );
+              })()}
+
+              <span>
+                {places.find((place) => place.id === originId)?.name ??
+                  "Seleccionar origen"}
+              </span>
+            </div>
+
+            {/* Flecha */}
+            <svg
+              className={`h-4 w-4 transition-transform ${
+                originOpen ? "rotate-180" : ""
+              }`}
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M19 9l-7 7-7-7"
+              />
+            </svg>
+          </button>
+
+          {/* Opciones */}
+          {originOpen && (
+            <div className="absolute z-50 mt-1 w-full overflow-hidden rounded-lg border border-gray-200 bg-white shadow-lg">
+              {places.map((place, index) => {
+                const colors = [
+                  "#7C3AED", // Morado
+                  "#2563EB", // Azul
+                  "#16A34A", // Verde
+                  "#DC2626", // Rojo
+                ];
+
+                const pointColor = colors[index % colors.length];
+
+                const isSelected = place.id === originId;
+
+                return (
+                  <button
+                    key={place.id}
+                    type="button"
+                    onClick={() => {
+                      setOriginId(place.id);
+                      setOriginOpen(false);
+                    }}
+                    className={`flex w-full items-center gap-3 px-3 py-3 text-left text-sm transition ${
+                      isSelected
+                        ? "bg-orange-50"
+                        : "hover:bg-gray-50"
+                    }`}
+                  >
+                    {/* Punto de color */}
+                    <span
+                      className="h-3 w-3 shrink-0 rounded-full border-2 border-white shadow"
+                      style={{
+                        backgroundColor: pointColor,
+                      }}
+                    />
+
+                    {/* Nombre */}
+                    <span
+                      className={
+                        isSelected
+                          ? "font-semibold text-gray-900"
+                          : "text-gray-700"
+                      }
+                    >
+                      {place.name}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Ruta directa */}
       {mode === "direct" && (
-        <div>
-          <label
-            htmlFor="direct-destination"
-            className="mb-2 block text-sm font-semibold text-gray-700"
-          >
-            Destino
-          </label>
+  <div>
+    <label className="mb-2 block text-sm font-semibold text-gray-700">
+      Destino
+    </label>
 
-          <select
-            id="direct-destination"
-            value={destinationId}
-            onChange={(event) => setDestinationId(event.target.value)}
-            className="w-full rounded-lg border border-gray-300 bg-white px-3 py-3 text-sm text-gray-800 outline-none focus:border-orange-500"
-          >
+    <div className="relative">
+      {/* Botón del destino seleccionado */}
+      <button
+        type="button"
+        onClick={() => setDestinationOpen(!destinationOpen)}
+        className="flex w-full items-center justify-between rounded-lg border border-gray-300 bg-white px-3 py-3 text-left text-sm text-gray-800 outline-none transition hover:border-gray-400 focus:border-orange-500"
+      >
+        <div className="flex items-center gap-3">
+          {(() => {
+            const destinationPlaces = places.filter(
+              (place) => place.id !== originId
+            );
+
+            const selectedIndex = destinationPlaces.findIndex(
+              (place) => place.id === destinationId
+            );
+
+            const colors = [
+              "#7C3AED", // Morado
+              "#2563EB", // Azul
+              "#16A34A", // Verde
+              "#DC2626", // Rojo
+            ];
+
+            const selectedColor =
+              selectedIndex !== -1
+                ? colors[
+                    places.findIndex(
+                      (place) => place.id === destinationId
+                    ) % colors.length
+                  ]
+                : "#9CA3AF";
+
+            return (
+              <span
+                className="h-3 w-3 shrink-0 rounded-full border-2 border-white shadow"
+                style={{
+                  backgroundColor: selectedColor,
+                }}
+              />
+            );
+          })()}
+
+          <span>
+            {places.find((place) => place.id === destinationId)
+              ?.name ?? "Seleccionar destino"}
+          </span>
+        </div>
+
+        {/* Flecha */}
+        <svg
+          className={`h-4 w-4 transition-transform ${
+            destinationOpen ? "rotate-180" : ""
+          }`}
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M19 9l-7 7-7-7"
+          />
+        </svg>
+      </button>
+
+      {/* Opciones */}
+        {destinationOpen && (
+          <div className="absolute z-50 mt-1 w-full overflow-hidden rounded-lg border border-gray-200 bg-white shadow-lg">
             {places
               .filter((place) => place.id !== originId)
-              .map((place) => (
-                <option key={place.id} value={place.id}>
-                  {place.name}
-                </option>
-              ))}
-          </select>
+              .map((place) => {
+                const originalIndex = places.findIndex(
+                  (item) => item.id === place.id
+                );
 
-          <p className="mt-2 text-xs text-gray-500">
-            Se utilizará Dijkstra para encontrar el recorrido entre ambos puntos.
-          </p>
-        </div>
-      )}
+                const colors = [
+                  "#7C3AED", // Morado
+                  "#2563EB", // Azul
+                  "#16A34A", // Verde
+                  "#DC2626", // Rojo
+                ];
+
+                const pointColor =
+                  colors[originalIndex % colors.length];
+
+                const isSelected = place.id === destinationId;
+
+                return (
+                  <button
+                    key={place.id}
+                    type="button"
+                    onClick={() => {
+                      setDestinationId(place.id);
+                      setDestinationOpen(false);
+                    }}
+                    className={`flex w-full items-center gap-3 px-3 py-3 text-left text-sm transition ${
+                      isSelected
+                        ? "bg-orange-50"
+                        : "hover:bg-gray-50"
+                    }`}
+                  >
+                    {/* Punto de color */}
+                    <span
+                      className="h-3 w-3 shrink-0 rounded-full border-2 border-white shadow"
+                      style={{
+                        backgroundColor: pointColor,
+                      }}
+                    />
+
+                    {/* Nombre */}
+                    <span
+                      className={
+                        isSelected
+                          ? "font-semibold text-gray-900"
+                          : "text-gray-700"
+                      }
+                    >
+                      {place.name}
+                    </span>
+                  </button>
+                );
+              })}
+          </div>
+        )}
+      </div>
+
+      <p className="mt-2 text-xs text-gray-500">
+        Se utilizará Dijkstra para encontrar el recorrido entre ambos
+        puntos.
+      </p>
+    </div>
+  )}
 
       {/* Entregas */}
       {mode === "deliveries" && (
@@ -322,19 +530,59 @@ export default function RouteForm({
               {deliveryIds.map((id, index) => {
                 const place = places.find((item) => item.id === id);
 
+                const placeIndex = places.findIndex(
+                  (item) => item.id === id
+                );
+
+                const colors = [
+                  {
+                    border: "#7C3AED",
+                    background: "#A78BFA",
+                    text: "#5B21B6",
+                  },
+                  {
+                    border: "#2563EB",
+                    background: "#60A5FA",
+                    text: "#1D4ED8",
+                  },
+                  {
+                    border: "#16A34A",
+                    background: "#4ADE80",
+                    text: "#15803D",
+                  },
+                  {
+                    border: "#DC2626",
+                    background: "#F87171",
+                    text: "#B91C1C",
+                  },
+                ];
+
+                const pointColor =
+                  colors[placeIndex % colors.length];
+
                 return (
                   <div
                     key={`${id}-${index}`}
                     className="flex items-center gap-2 rounded-lg border border-gray-200 p-3"
                   >
-                    <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-orange-100 text-xs font-bold text-orange-700">
+                    {/* Número de parada */}
+                    <span
+                      className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs font-bold"
+                      style={{
+                        backgroundColor: pointColor.background,
+                        color: pointColor.text,
+                        border: `2px solid ${pointColor.border}`,
+                      }}
+                    >
                       {index + 1}
                     </span>
 
+                    {/* Nombre de la dirección */}
                     <span className="min-w-0 flex-1 text-sm text-gray-700">
                       {place?.name}
                     </span>
 
+                    {/* Botón quitar */}
                     <button
                       type="button"
                       onClick={() => removeDestination(id)}
@@ -360,23 +608,9 @@ export default function RouteForm({
               + Agregar destino
             </button>
 
-            <p className="mt-2 text-xs text-gray-500">
-              Los lugares de esta versión son ejemplos de interfaz. Puedes
-              ampliar la lista o reemplazarla por selección desde el mapa.
-            </p>
           </div>
 
-          <label className="flex items-center gap-3 text-sm text-gray-700">
-            <input
-              type="checkbox"
-              checked={returnToOrigin}
-              onChange={(event) =>
-                setReturnToOrigin(event.target.checked)
-              }
-              className="h-4 w-4 accent-orange-600"
-            />
-            Regresar al punto de origen
-          </label>
+         
         </>
       )}
 

@@ -12,7 +12,7 @@ import {
 
 import "leaflet/dist/leaflet.css";
 
-import type { Coordinate } from "@/types/route";
+import type { Coordinate, Place } from "@/types/route";
 
 import mirafloresGeoJSON from "@/data/miraflores.json";
 import sanIsidroGeoJSON from "@/data/san-isidro.json";
@@ -24,6 +24,34 @@ interface RouteMapProps {
   deliveryOrder?: number[];
   onMapClick?: (coordinate: Coordinate) => void;
 }
+
+const places: Place[] = [
+  {
+    id: "miraflores-centro",
+    name: "Av. Larco - Miraflores",
+    district: "Miraflores",
+    coordinates: { lat: -12.1219, lon: -77.0297 },
+  },
+  {
+    id: "san-isidro-javier-prado",
+    name: "Av. Javier Prado - San Isidro",
+    district: "San Isidro",
+    coordinates: { lat: -12.0925, lon: -77.0365 },
+  },
+  {
+    id: "miraflores-sur",
+    name: "Av. Reducto - Miraflores",
+    district: "Miraflores",
+    coordinates: { lat: -12.1328, lon: -77.0225 },
+  },
+  {
+    id: "san-isidro-centro",
+    name: "Centro de San Isidro",
+    district: "San Isidro",
+    coordinates: { lat: -12.097, lon: -77.033 },
+  },
+];
+
 
 const center: [number, number] = [-12.105, -77.035];
 
@@ -106,7 +134,7 @@ export default function RouteMap({
     }));
 
   return (
-    <div className="h-[620px] min-h-[420px] w-full overflow-hidden rounded-2xl border border-gray-200">
+    <div className="h-[720px] min-h-[520px] w-full overflow-hidden rounded-2xl border border-gray-200">
       <MapContainer
         center={center}
         zoom={13}
@@ -135,7 +163,61 @@ export default function RouteMap({
             fillOpacity: 0.08,
           }}
         />
+        {places.map((place, index) => {
+  const colors = [
+    {
+      color: "#7C3AED",
+      fillColor: "#A78BFA",
+    },
+    {
+      color: "#2563EB",
+      fillColor: "#60A5FA",
+    },
+    {
+      color: "#16A34A",
+      fillColor: "#4ADE80",
+    },
+    {
+      color: "#DC2626",
+      fillColor: "#F87171",
+    },
+  ];
 
+  const pointColor = colors[index % colors.length];
+
+  return (
+    <CircleMarker
+      key={place.id}
+      center={[
+        place.coordinates.lat,
+        place.coordinates.lon,
+      ]}
+      radius={9}
+      pathOptions={{
+        color: pointColor.color,
+        fillColor: pointColor.fillColor,
+        fillOpacity: 1,
+        weight: 3,
+      }}
+    >
+      <Popup>
+        <div>
+          <strong>{place.name}</strong>
+          <br />
+          <span>{place.district}</span>
+          <br />
+          <span>
+            Lat: {place.coordinates.lat}
+          </span>
+          <br />
+          <span>
+            Lon: {place.coordinates.lon}
+          </span>
+        </div>
+      </Popup>
+    </CircleMarker>
+  );
+})}
         {/* =====================================================
             DISTRITO DE SAN ISIDRO
         ===================================================== */}

@@ -355,112 +355,15 @@ export default function RepartidorPage() {
               </div>
             )}
 
-            {/* RESULTADO */}
-
-            <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-              <div className="border-b border-slate-100 px-4 py-3">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h2 className="text-sm font-black text-slate-950">
-                      Ruta calculada
-                    </h2>
-
-                    <p className="mt-0.5 text-[10px] text-slate-500">
-                      Métricas del algoritmo
-                    </p>
-                  </div>
-
-                  {result && (
-                    <span className="rounded-full bg-[#FFCC00] px-2 py-0.5 text-[7px] font-black text-orange-950">
-                      CALCULADA
-                    </span>
-                  )}
-                </div>
-              </div>
-
-              <div className="p-4">
-                <RouteResult result={result} mode={mode} />
-              </div>
-            </section>
-
-            {/* COMPARACIÓN */}
-
-            {comparison.length > 0 && (
-              <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-                <h2 className="text-sm font-black text-slate-900">
-                  Comparación de algoritmos
-                </h2>
-
-                <div className="mt-3 overflow-x-auto">
-                  <table className="w-full min-w-[440px] text-left text-[10px]">
-                    <thead>
-                      <tr className="border-b border-slate-100 text-slate-400">
-                        <th className="py-2 pr-2">Algoritmo</th>
-                        <th className="py-2 pr-2">Tiempo</th>
-                        <th className="py-2 pr-2">Estados</th>
-                        <th className="py-2 pr-2">Costo</th>
-                        <th className="py-2">Resultado</th>
-                      </tr>
-                    </thead>
-
-                    <tbody>
-                      {comparison.map((item) => (
-                        <tr
-                          key={item.algorithm}
-                          className="border-b border-slate-50"
-                        >
-                          <td className="py-2 pr-2 font-bold text-slate-700">
-                            {algorithmNames[item.algorithm] ??
-                              item.algorithm}
-                          </td>
-
-                          <td className="py-2 pr-2 text-slate-600">
-                            {item.result
-                              ? `${item.result.execution_time_ms.toFixed(2)} ms`
-                              : "Error"}
-                          </td>
-
-                          <td className="py-2 pr-2 text-slate-600">
-                            {item.result?.states_explored ?? "—"}
-                          </td>
-
-                          <td className="py-2 pr-2 text-slate-600">
-                            {item.result
-                              ? item.result.weighted_cost.toFixed(2)
-                              : "—"}
-                          </td>
-
-                          <td className="py-2 text-slate-600">
-                            {item.result
-                              ? item.result.is_optimal
-                                ? "Óptimo"
-                                : "Aproximado"
-                              : item.error ?? "Error"}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </section>
-            )}
-
-            {/* INICIAR ENTREGA */}
-
-            <button
-              type="button"
-              disabled={!result || loading}
-              className="w-full rounded-xl bg-[#FF6600] px-4 py-3 text-sm font-black text-white shadow-[0_4px_12px_rgba(255,102,0,0.25)] transition hover:bg-[#e95700] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              🛵 Iniciar entrega
-            </button>
+            
           </aside>
+          
 
           {/* =================================================
               MAPA
           ================================================== */}
 
-          <section className="relative min-h-[620px] overflow-hidden rounded-2xl border border-orange-100 bg-white shadow-[0_5px_25px_rgba(255,102,0,0.08)] lg:col-span-8 xl:col-span-9">
+          <section className="relative h-[720px] min-h-[620px] overflow-hidden rounded-2xl border border-orange-100 bg-white shadow-[0_5px_25px_rgba(255,102,0,0.08)] lg:col-span-5 xl:col-span-6">
 
             {/* INFORMACIÓN SUPERIOR */}
 
@@ -566,6 +469,107 @@ export default function RepartidorPage() {
               </div>
             </div>
           </section>
+          <aside className="flex min-h-0 flex-col gap-3 lg:col-span-4 xl:col-span-3">
+            {/* RESULTADO */}
+
+            <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+              <div className="border-b border-slate-100 px-4 py-3">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h2 className="text-sm font-black text-slate-950">
+                      Ruta calculada
+                    </h2>
+
+                    <p className="mt-0.5 text-[10px] text-slate-500">
+                      Métricas del algoritmo
+                    </p>
+                  </div>
+
+                  {result && (
+                    <span className="rounded-full bg-[#FFCC00] px-2 py-0.5 text-[7px] font-black text-orange-950">
+                      CALCULADA
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              <div className="p-4">
+                <RouteResult result={result} mode={mode} />
+              </div>
+            </section>
+
+            {/* COMPARACIÓN */}
+
+            {comparison.length > 0 && (
+              <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+                <h2 className="text-sm font-black text-slate-900">
+                  Comparación de algoritmos
+                </h2>
+
+                <div className="mt-3 overflow-x-auto">
+                  <table className="w-full min-w-[440px] text-left text-[10px]">
+                    <thead>
+                      <tr className="border-b border-slate-100 text-slate-400">
+                        <th className="py-2 pr-2">Algoritmo</th>
+                        <th className="py-2 pr-2">Tiempo</th>
+                        <th className="py-2 pr-2">Estados</th>
+                        <th className="py-2 pr-2">Costo</th>
+                        <th className="py-2">Resultado</th>
+                      </tr>
+                    </thead>
+
+                    <tbody>
+                      {comparison.map((item) => (
+                        <tr
+                          key={item.algorithm}
+                          className="border-b border-slate-50"
+                        >
+                          <td className="py-2 pr-2 font-bold text-slate-700">
+                            {algorithmNames[item.algorithm] ??
+                              item.algorithm}
+                          </td>
+
+                          <td className="py-2 pr-2 text-slate-600">
+                            {item.result
+                              ? `${item.result.execution_time_ms.toFixed(2)} ms`
+                              : "Error"}
+                          </td>
+
+                          <td className="py-2 pr-2 text-slate-600">
+                            {item.result?.states_explored ?? "—"}
+                          </td>
+
+                          <td className="py-2 pr-2 text-slate-600">
+                            {item.result
+                              ? item.result.weighted_cost.toFixed(2)
+                              : "—"}
+                          </td>
+
+                          <td className="py-2 text-slate-600">
+                            {item.result
+                              ? item.result.is_optimal
+                                ? "Óptimo"
+                                : "Aproximado"
+                              : item.error ?? "Error"}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </section>
+            )}
+
+            {/* INICIAR ENTREGA */}
+
+            <button
+              type="button"
+              disabled={!result || loading}
+              className="w-full rounded-xl bg-[#FF6600] px-4 py-3 text-sm font-black text-white shadow-[0_4px_12px_rgba(255,102,0,0.25)] transition hover:bg-[#e95700] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              🛵 Iniciar entrega
+            </button>
+          </aside>
         </div>
       </main>
     </div>
