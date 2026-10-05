@@ -132,13 +132,6 @@ export default function RouteResult({
         </>
       )}
 
-      <div className="mt-4 rounded-lg bg-gray-50 p-3">
-        <p className="text-xs leading-5 text-gray-600">
-          El costo ponderado considera los pesos de tráfico del modelo.
-          No representa kilómetros físicos. Para la distancia recorrida,
-          utiliza la distancia real indicada arriba.
-        </p>
-      </div>
     </section>
   );
 }

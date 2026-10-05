@@ -204,19 +204,20 @@ export default function RepartidorPage() {
   // =======================================================
   // RENDER
   // =======================================================
-
+const [pedidoEntregado, setPedidoEntregado] = useState(false);
   return (
-    <div className="min-h-screen w-full bg-[#fffaf5]">
-      <Navbar />
+  <div className="min-h-screen w-full bg-[#fffaf5]">
+    <Navbar />
 
-      <main className="p-3 lg:p-4">
-        <div className="grid grid-cols-1 gap-3 lg:grid-cols-12">
+    <main className="h-[calc(100vh-64px)] overflow-hidden p-3 lg:p-4">
+      <div className="grid h-full min-h-0 grid-cols-1 gap-3 lg:grid-cols-12">
 
-          {/* =================================================
-              PANEL DEL REPARTIDOR
-          ================================================== */}
+        {/* =================================================
+            PANEL DEL REPARTIDOR
+        ================================================== */}
 
-          <aside className="flex min-h-0 flex-col gap-3 lg:col-span-4 xl:col-span-3">
+        <aside className="min-h-0 h-full overflow-y-auto pr-2 lg:col-span-4 xl:col-span-3">
+          <div className="flex flex-col gap-3">
 
             {/* PERFIL */}
 
@@ -355,121 +356,161 @@ export default function RepartidorPage() {
               </div>
             )}
 
-            
-          </aside>
-          
+          </div>
+        </aside>
 
-          {/* =================================================
-              MAPA
-          ================================================== */}
 
-          <section className="relative h-[720px] min-h-[620px] overflow-hidden rounded-2xl border border-orange-100 bg-white shadow-[0_5px_25px_rgba(255,102,0,0.08)] lg:col-span-5 xl:col-span-6">
+        {/* =================================================
+            MAPA
+        ================================================== */}
 
-            {/* INFORMACIÓN SUPERIOR */}
+        <section className="relative h-[720px] min-h-[620px] overflow-hidden rounded-2xl border border-orange-100 bg-white shadow-[0_5px_25px_rgba(255,102,0,0.08)] lg:col-span-5 xl:col-span-6">
 
-            <div className="pointer-events-none absolute left-3 right-3 top-3 z-[1000] flex items-start justify-between">
-              <div className="rounded-xl border border-orange-100 bg-white/95 px-3 py-2 shadow-lg backdrop-blur">
-                <div className="flex items-center gap-2.5">
-                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#FF6600]">
-                    <svg
-                      width="15"
-                      height="15"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="white"
-                      strokeWidth="2"
-                    >
-                      <path d="M5 19 19 5" />
-                      <path d="M5 5h.01" />
-                      <path d="M19 19h.01" />
-                    </svg>
-                  </div>
+          {/* INFORMACIÓN SUPERIOR */}
 
-                  <div>
-                    <p className="text-[10px] font-black uppercase tracking-wider text-slate-900">
-                      Ruta de entrega
-                    </p>
-
-                    <p className="text-[9px] text-slate-500">
-                      Miraflores · San Isidro · OpenStreetMap
-                    </p>
-                  </div>
+          <div className="pointer-events-none absolute left-3 right-3 top-3 z-[1000] flex items-start justify-between">
+            <div className="rounded-xl border border-orange-100 bg-white/95 px-3 py-2 shadow-lg backdrop-blur">
+              <div className="flex items-center gap-2.5">
+                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#FF6600]">
+                  <svg
+                    width="15"
+                    height="15"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="white"
+                    strokeWidth="2"
+                  >
+                    <path d="M5 19 19 5" />
+                    <path d="M5 5h.01" />
+                    <path d="M19 19h.01" />
+                  </svg>
                 </div>
-              </div>
 
-              <div className="hidden rounded-xl border border-orange-100 bg-white/95 shadow-lg backdrop-blur sm:block">
-                <div className="px-3 py-2">
-                  <p className="text-[8px] font-bold uppercase tracking-wider text-slate-400">
-                    Algoritmo
+                <div>
+                  <p className="text-[10px] font-black uppercase tracking-wider text-slate-900">
+                    Ruta de entrega
                   </p>
 
-                  <p className="mt-0.5 text-[11px] font-black text-[#FF6600]">
-                    {algorithmName}
+                  <p className="text-[9px] text-slate-500">
+                    Miraflores · San Isidro · OpenStreetMap
                   </p>
                 </div>
               </div>
             </div>
 
-            {/* MAPA */}
+            <div className="hidden rounded-xl border border-orange-100 bg-white/95 shadow-lg backdrop-blur sm:block">
+              <div className="px-3 py-2">
+                <p className="text-[8px] font-bold uppercase tracking-wider text-slate-400">
+                  Algoritmo
+                </p>
 
-            <div className="h-full min-h-[620px] w-full">
-              <RouteMap
-                route={result?.path ?? []}
-                deliveryOrder={
-                  isDeliveryResult
-                    ? result.delivery_order
-                    : []
-                }
-              />
+                <p className="mt-0.5 text-[11px] font-black text-[#FF6600]">
+                  {algorithmName}
+                </p>
+              </div>
             </div>
+          </div>
 
-            {/* LEYENDA */}
+          {/* MAPA */}
 
-            <div className="absolute bottom-3 left-3 z-[1000]">
-              <div className="rounded-xl border border-orange-100 bg-white/95 px-3 py-2 shadow-lg backdrop-blur">
-                <div className="flex flex-wrap items-center gap-3">
-                  <div className="flex items-center gap-1.5">
-                    <span className="h-2 w-5 rounded-full bg-[#FF6600]" />
+          <div className="h-full min-h-[620px] w-full">
+            <RouteMap
+              route={result?.path ?? []}
+              deliveryOrder={
+                isDeliveryResult
+                  ? result.delivery_order
+                  : []
+              }
+            />
+          </div>
 
-                    <span className="text-[9px] font-bold text-slate-700">
-                      Ruta
-                    </span>
-                  </div>
+          {/* PEDIDO ENTREGADO */}
 
-                  <div className="h-3 w-px bg-slate-200" />
-
-                  <span className="text-[9px] font-bold text-slate-500">
-                    Miraflores · San Isidro
+          {pedidoEntregado && (
+            <div className="absolute inset-0 z-[2000] flex items-center justify-center bg-slate-950/10 backdrop-blur-[2px]">
+              <div className="mx-4 w-full max-w-sm rounded-2xl border border-emerald-200 bg-white p-6 text-center shadow-2xl">
+                
+                <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-emerald-100">
+                  <span className="text-3xl text-emerald-600">
+                    ✓
                   </span>
                 </div>
+
+                <h2 className="mt-4 text-xl font-black text-slate-950">
+                  ¡Pedido entregado!
+                </h2>
+
+                <p className="mt-2 text-sm text-slate-500">
+                  El pedido fue entregado correctamente.
+                </p>
+
+                <button
+                  type="button"
+                  onClick={() => setPedidoEntregado(false)}
+                  className="mt-5 rounded-xl bg-[#FF6600] px-5 py-2.5 text-xs font-black text-white transition hover:bg-[#e95700]"
+                >
+                  Cerrar
+                </button>
+
               </div>
             </div>
+          )}
 
-            {/* ESTADO */}
+          {/* LEYENDA */}
 
-            <div className="absolute bottom-3 right-3 z-[1000]">
-              <div className="rounded-xl bg-[#FF6600] px-3 py-2 shadow-lg">
-                <div className="flex items-center gap-2">
-                  <span className="text-sm">🛵</span>
+          <div className="absolute bottom-3 left-3 z-[1000]">
+            <div className="rounded-xl border border-orange-100 bg-white/95 px-3 py-2 shadow-lg backdrop-blur">
+              <div className="flex flex-wrap items-center gap-3">
+                <div className="flex items-center gap-1.5">
+                  <span className="h-2 w-5 rounded-full bg-[#FF6600]" />
 
-                  <div>
-                    <p className="text-[8px] font-bold uppercase tracking-wider text-orange-100">
-                      Estado del recorrido
-                    </p>
+                  <span className="text-[9px] font-bold text-slate-700">
+                    Ruta
+                  </span>
+                </div>
 
-                    <p className="text-[10px] font-black text-white">
-                      {loading
-                        ? "Calculando..."
-                        : result
-                          ? "Ruta calculada"
-                          : "Esperando ruta"}
-                    </p>
-                  </div>
+                <div className="h-3 w-px bg-slate-200" />
+
+                <span className="text-[9px] font-bold text-slate-500">
+                  Miraflores · San Isidro
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* ESTADO */}
+
+          <div className="absolute bottom-3 right-3 z-[1000]">
+            <div className="rounded-xl bg-[#FF6600] px-3 py-2 shadow-lg">
+              <div className="flex items-center gap-2">
+                <span className="text-sm">🛵</span>
+
+                <div>
+                  <p className="text-[8px] font-bold uppercase tracking-wider text-orange-100">
+                    Estado del recorrido
+                  </p>
+
+                  <p className="text-[10px] font-black text-white">
+                    {loading
+                      ? "Calculando..."
+                      : result
+                        ? "Ruta calculada"
+                        : "Esperando ruta"}
+                  </p>
                 </div>
               </div>
             </div>
-          </section>
-          <aside className="flex min-h-0 flex-col gap-3 lg:col-span-4 xl:col-span-3">
+          </div>
+        </section>
+
+
+        {/* =================================================
+            PANEL DE RESULTADOS
+        ================================================== */}
+
+        <aside className="min-h-0 h-full overflow-y-auto pr-2 lg:col-span-4 xl:col-span-3">
+          <div className="flex flex-col gap-3">
+
             {/* RESULTADO */}
 
             <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
@@ -560,18 +601,24 @@ export default function RepartidorPage() {
               </section>
             )}
 
-            {/* INICIAR ENTREGA */}
+            {/* ENTREGAR PEDIDO */}
 
-            <button
+              <button
               type="button"
-              disabled={!result || loading}
-              className="w-full rounded-xl bg-[#FF6600] px-4 py-3 text-sm font-black text-white shadow-[0_4px_12px_rgba(255,102,0,0.25)] transition hover:bg-[#e95700] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              🛵 Iniciar entrega
-            </button>
-          </aside>
-        </div>
-      </main>
-    </div>
+              disabled={!result || loading || pedidoEntregado}
+              onClick={() => setPedidoEntregado(true)}
+              className="w-full rounded-xl bg-[#FF6600] px-4 py-3 text-sm font-black text-white shadow-[0_4px_12px_rgba(255,102,0,0.25)] 
+              transition hover:bg-[#e95700] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50">
+
+              {pedidoEntregado ? "✓ Pedido entregado" : "📦 Entregar pedido"} </button>
+
+
+          </div>
+        </aside>
+
+      </div>
+    </main>
+  </div>
   );
 }
+
