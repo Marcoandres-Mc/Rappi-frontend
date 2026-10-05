@@ -13,7 +13,7 @@ import type {
 export function calculateRoute(
   request: RouteRequest
 ): Promise<RouteResponse> {
-  return apiFetch<RouteResponse>("/routes/calculate", {
+  return apiFetch<RouteResponse>("routes/calculate", {
     method: "POST",
     body: JSON.stringify({
       ...request,
